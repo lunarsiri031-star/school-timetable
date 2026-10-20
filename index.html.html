@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบจัดตารางสอนโรงเรียนขยายโอกาส</title>
+<style>
+:root{font-family:'Sarabun','Noto Sans Thai',Tahoma,Arial,sans-serif;color:#18263c;background:#f3f6fb}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(115deg,#15355f,#2563a3);color:white;padding:24px clamp(16px,4vw,48px)}h1{font-size:1.55rem;margin:0 0 5px}header p{margin:0;color:#dcecff}main{max-width:1440px;margin:auto;padding:20px}nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}.tab{background:white;color:#263d59;border:1px solid #d5dfeb;border-radius:9px;padding:10px 15px;cursor:pointer;font-weight:600}.tab.active{background:#1c5da0;color:white}.panel{display:none}.panel.active{display:block}.card{background:white;border:1px solid #e0e8f1;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 9px #183b6410}h2{margin:0 0 14px;font-size:1.15rem}h3{font-size:1rem;margin:10px 0}.formgrid{display:flex;flex-wrap:wrap;gap:10px;align-items:end}.field{display:flex;flex-direction:column;gap:5px;min-width:155px;flex:1}.field label{font-size:.86rem;color:#445671}input,select{font:inherit;padding:9px 10px;border:1px solid #cbd7e5;border-radius:7px;min-width:0;width:100%;background:white}input[type=number]{max-width:140px}button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:9px 15px;background:#1d5d9b;color:white}button:hover{filter:brightness(.94)}button.secondary{background:#e9f1fa;color:#1a5082}button.warn{background:#a52c39}button.mini{padding:5px 9px;font-size:.83rem}button:disabled{opacity:.4;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:600px}th,td{border:1px solid #dce5ef;padding:8px;text-align:left;font-size:.91rem}th{background:#eaf1f9;white-space:nowrap}td input,td select{padding:6px;min-width:92px}.hint{color:#586d87;font-size:.9rem;line-height:1.65}.status{padding:12px;border-radius:8px;background:#eaf1fb;color:#214e7a;margin:10px 0;white-space:pre-wrap}.status.error{background:#fff0ef;color:#9f2933}.status.ok{background:#e8f7ed;color:#1d6940}.toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.toolbar .field{max-width:240px}.schedule{table-layout:fixed;min-width:880px}.schedule th,.schedule td{text-align:center;vertical-align:middle}.schedule th:first-child{width:90px}.schedule td{height:90px;background:#fff;cursor:pointer}.schedule td.filled{background:#edf5ff}.schedule td:hover{outline:2px solid #71a4d7;outline-offset:-2px}.subject{font-weight:bold}.teacher{font-size:.82rem;color:#546784;margin-top:3px}.small{font-size:.83rem}.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#edf3fa;border-radius:10px;padding:12px 18px;min-width:150px}.stat b{display:block;font-size:1.4rem}.locked{background:#fff6e6!important}.badge{display:inline-block;border-radius:20px;background:#e8eff8;padding:3px 9px;font-size:.8rem}.hide{display:none!important}@media print{header,nav,.noprint,.card:not(.printable),button{display:none!important}main{padding:0;max-width:none}.panel{display:none!important}#schedulePanel{display:block!important}.card.printable{border:0;box-shadow:none;padding:0}table{page-break-inside:auto}tr{page-break-inside:avoid}.schedule td{height:74px}body{background:white}}
+@media print{body.printSub #schedulePanel{display:none!important}body.printSub #substitution{display:block!important}body.printSub #substitution .card.printable{display:block!important}body.printSub #substitution .card:not(.printable){display:none!important}body.printSub #substitution select,body.printSub #substitution button{display:none!important}body.printSub #substitution .printTeacher{display:inline!important}}.printTeacher{display:none}#subGrid select{min-width:145px}#subGrid td{vertical-align:middle}
+
+/* แม่แบบตารางตามโรงเรียนบ้านตลิ่งชัน: วันด้านซ้าย / คาบและเวลาด้านบน */
+.school-preview{min-width:1120px;table-layout:fixed;border:1.3px solid #343434;background:#fff}
+.school-preview th,.school-preview td{border:1px solid #737373;text-align:center;vertical-align:middle;background:#fff;white-space:normal;overflow-wrap:anywhere}
+.school-preview th{background:#f5f6f8;color:#1b293b}
+.school-preview th.day-head,.school-preview th.day-name{width:95px;font-size:1rem}
+.school-preview th.lunch-head,.school-preview td.lunch-cell{width:75px;background:#f7f7f7}
+.school-preview th.period-head{font-weight:650}
+.school-preview th.period-head .period-time,.school-preview th.lunch-head .period-time{font-size:.76rem;font-weight:400;margin-top:5px;display:block}
+.school-preview td.lesson{height:90px;cursor:pointer}
+.school-preview td.lesson.filled{background:#fff}
+.school-preview td.lesson:hover{outline:2px solid #367cbb;outline-offset:-2px;background:#eef6ff}
+.school-preview .subject{font-weight:600;font-size:.91rem;line-height:1.3}
+.school-preview .teacher{font-size:.79rem;color:#33425b;line-height:1.4;margin-top:14px}
+.school-preview td.lunch-cell{cursor:default!important}
+.school-preview .lunch-vertical{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:600;letter-spacing:.1em;margin:auto}
+#viewMeta{text-align:center;margin:-7px 0 8px;font-size:.89rem;color:#46566b}
+#teacherLoadMeta{display:none;text-align:center;margin:1px 0 15px;font-weight:700;color:#164c7e;font-size:1.06rem}
+#teacherLoadMeta.active{display:block}
+/* เอกสารตารางเรียน/ตารางสอนแบบทางการ ตามรูปแบบเอกสารสอนแทน */
+.school-document-heading{text-align:center;line-height:1.5;margin:5px 0 12px;font-family:'TH Sarabun New','TH SarabunPSK',Sarabun,Tahoma,sans-serif}
+.school-document-heading h2{margin:0;font-size:1.3rem;font-weight:700}
+.school-document-heading .doc-term{font-size:1.06rem}
+.school-document-heading #viewMeta{margin:1px 0 2px;font-size:1.04rem;color:#202c3c}
+.school-document-heading #teacherLoadMeta{margin:1px 0 4px;font-size:1.04rem;color:#202c3c}
+.official-timetable-footer{font-family:'TH Sarabun New','TH SarabunPSK',Sarabun,Tahoma,sans-serif;color:#181818}
+.official-timetable-footer .doc-hours{text-align:right;margin-top:10px;font-size:1.04rem}
+.official-timetable-footer .doc-signatures{display:flex;gap:20px;justify-content:space-around;text-align:center;margin:26px 12px 8px;line-height:1.7;font-size:1.03rem}
+.official-timetable-footer .doc-signatures>div{width:42%;min-width:0}
+@media print{.official-timetable-footer{break-inside:avoid;page-break-inside:avoid}.school-document-heading{break-after:avoid;page-break-after:avoid}}
+#teacherLoadSummary table{min-width:730px}
+#teacherLoadSummary td:nth-child(n+3),#teacherLoadSummary th:nth-child(n+3){text-align:center}
+#teacherLoadSummary tr.summary-grand-total td{font-weight:700;background:#eaf1f9}
+@media print{#teacherLoadMeta{color:#111}#teacherLoadSummary table{page-break-inside:auto}}
+
+/* ตัวอย่างรายงานการจัดสอนแทนอย่างเป็นทางการ */
+.sub-doc-heading{text-align:center;line-height:1.5;margin:3px 0 14px}.sub-doc-heading strong{font-size:1.12rem}.sub-official-table{min-width:1050px;table-layout:fixed;border:1px solid #373737;background:white}.sub-official-table th,.sub-official-table td{border:1px solid #4b5563;text-align:center;vertical-align:middle;white-space:normal;overflow-wrap:anywhere}.sub-official-table th{background:#f2f2f2;color:#1f2937}.sub-official-table th:nth-child(1){width:4%}.sub-official-table th:nth-child(2){width:5%}.sub-official-table th:nth-child(3){width:11%}.sub-official-table th:nth-child(4){width:13%}.sub-official-table th:nth-child(5){width:17%}.sub-official-table th:nth-child(6){width:17%}.sub-official-table th:nth-child(7){width:18%}.sub-official-table th:nth-child(8){width:15%}.sub-doc-count{text-align:right;padding:8px 0}.sub-doc-sign{display:flex;gap:20px;justify-content:space-around;text-align:center;padding:22px 8px 6px;line-height:1.8}/* สีประจำรายวิชา: ใช้โทนสีอ่อนที่อ่านง่าย และแสดงตรงกันทั้งเอกสาร/หน้าจอ */
+.subject-color-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
+.subject-color-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:8px;max-height:315px;overflow-y:auto;padding:5px 2px}
+.subject-color-item{display:flex;align-items:center;gap:9px;border:1px solid #dfe7f0;border-radius:9px;background:white;padding:7px 9px;min-width:0}
+.subject-color-item .swatch{display:inline-block;width:26px;height:26px;border-radius:5px;border:1px solid #8896a6;flex:none}
+.subject-color-item .subject-color-name{flex:1;min-width:0;overflow-wrap:anywhere;font-size:.88rem}
+.subject-color-item input[type=color]{width:49px;min-width:49px;height:35px;padding:3px;border-radius:7px;cursor:pointer}
+.color-details>summary{font-weight:650;cursor:pointer;margin:6px 0 12px}
+.color-legend{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.color-legend span{border:1px solid #c9d3df;border-radius:7px;padding:4px 10px;font-size:.78rem;color:#18263c}
+.school-preview td.lesson.filled.locked{background:var(--lesson-bg,#fff)!important}
+.school-preview td.lesson.filled .teacher{color:inherit}
+@media print{.school-preview td.lesson,.school-preview td.lesson.filled{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}}
+
+
+/* Data safety: portable project files supplement (do not replace) local browser storage. */
+#dataSafetyCenter{border:2px solid #e2b963;background:#fffdf5;margin:0 0 16px;padding:14px 18px}
+#dataSafetyCenter h2{margin:0 0 6px}#dataSafetyCenter .safety-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#dataSafetyCenter .safety-actions button{padding:9px 12px}
+#dataSafetyInfo{padding:8px 10px;background:#f5f7fa;border-radius:7px;margin-top:10px;white-space:pre-line;line-height:1.6}
+#dataSafetyInfo.alert{background:#fff0ef;color:#922630}
+#dataSafetyCenter .tiny-note{margin:8px 0 0;font-size:.82rem;color:#536477;line-height:1.6}
+@media print {#dataSafetyCenter{display:none!important}}
+</style></head>
+<body><header><h1>ระบบจัดตารางสอนโรงเรียนขยายโอกาส</h1><p>จัดตารางเรียน–ตารางสอน • ตรวจสอบครูสอนชน • ปรับคาบด้วยตนเอง • ใช้งานแบบออฟไลน์</p></header>
+<main><nav class="noprint"><button class="tab active" data-tab="setup">1. ตั้งค่า</button><button class="tab" data-tab="records">2. ข้อมูลพื้นฐาน</button><button class="tab" data-tab="assign">3. ภาระสอน</button><button class="tab" data-tab="schedulePanel">4. จัดตารางสอน</button><button class="tab" data-tab="substitution">5. จัดสอนแทน</button><button class="tab" data-tab="reports">6. ตรวจสอบและส่งออก</button></nav>
+<div class="card noprint" id="dataSafetyCenter" role="region" aria-label="ศูนย์เก็บรักษาข้อมูล">
+ <h2>บันทึกและป้องกันข้อมูลสูญหาย</h2>
+ <p class="hint" style="margin:2px 0 8px">ข้อมูลในเบราว์เซอร์อาจไม่ตามไปเมื่อเปิดไฟล์โปรแกรมรุ่นใหม่หรือย้ายไฟล์ HTML • <b>แนะนำให้ดาวน์โหลดไฟล์สำรอง JSON หลังจัดตารางทุกครั้ง</b></p>
+ <div class="safety-actions">
+  <button type="button" id="safetyBackup" style="background:#19734d">บันทึกข้อมูลถาวร (.json)</button>
+  <button type="button" id="safetyRestore" class="secondary">เปิดไฟล์ข้อมูลสำรอง (.json)</button>
+  <button type="button" id="safetyAttachNew" class="secondary">เชื่อมแฟ้มบันทึกอัตโนมัติ (Chrome/Edge)</button>
+  <button type="button" id="safetyAttachExisting" class="secondary">เปิดแฟ้มที่เคยบันทึก (Chrome/Edge)</button>
+ </div>
+ <div id="dataSafetyInfo" role="status" aria-live="polite">กำลังตรวจสอบข้อมูลที่บันทึกไว้...</div>
+ <p class="tiny-note">การเชื่อมแฟ้มอัตโนมัติต้องอนุญาตการเข้าถึงไฟล์ และใช้งานได้เฉพาะเบราว์เซอร์ที่รองรับ หากไม่รองรับ ให้ใช้ปุ่มสีเขียวเพื่อดาวน์โหลด JSON แทน • ไฟล์ Excel/PDF สำหรับพิมพ์ไม่สามารถนำเข้ากลับเพื่อแก้ไขตารางได้</p>
+</div>
+
+<section class="panel active" id="setup">
+<div class="card noprint" id="cloudCard" style="border:2px solid #9dbbdc;background:#f8fbff">
+ <h2>เชื่อมต่อข้อมูลออนไลน์ (ใช้ข้อมูลเดียวกันบนคอมพิวเตอร์และโทรศัพท์)</h2>
+ <p class="hint">ตั้งค่าฐานข้อมูลออนไลน์ครั้งแรก และเข้าสู่ระบบด้วยบัญชีที่โรงเรียนอนุญาตให้ใช้ ข้อมูลจะซิงก์หลังจากเลือกโหลดข้อมูลออนไลน์หรืออัปโหลดข้อมูลจากเครื่องอย่างชัดเจน</p>
+ <div class="formgrid cloud-settings">
+   <div class="field"><label for="cloudUrl">Supabase Project URL</label><input id="cloudUrl" type="url" placeholder="https://xxxx.supabase.co" autocomplete="url"></div>
+   <div class="field"><label for="cloudKey">Publishable / anon key (ไม่ใช่ service_role)</label><input id="cloudKey" type="text" autocomplete="off" placeholder="sb_publishable_... หรือ eyJ..."></div>
+   <div class="field"><label for="cloudSchool">รหัสฐานข้อมูลของโรงเรียน</label><input id="cloudSchool" type="text" value="a9538c21-4f67-4df3-8a90-47059284aa72"></div>
+   <div class="field"><label for="cloudEmail">อีเมลผู้ใช้งาน</label><input id="cloudEmail" type="email" autocomplete="username" placeholder="teacher@example.com"></div>
+   <div class="field"><label for="cloudPassword">รหัสผ่านผู้ใช้งาน</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="รหัสผ่านบัญชีออนไลน์"></div>
+ </div>
+ <div class="actions" style="margin:10px 0 14px"><button id="cloudLogin" type="button">ลงชื่อเข้าใช้และเชื่อมต่อ</button><button id="cloudLogout" class="secondary" type="button" disabled>ออกจากระบบ</button></div>
+ <div class="actions"><button id="cloudDownload" class="secondary" type="button" disabled>โหลดข้อมูลล่าสุดจากออนไลน์ลงเครื่อง</button><button id="cloudUpload" type="button" disabled>อัปโหลดข้อมูลเครื่องนี้ขึ้นออนไลน์</button><button id="cloudCheck" class="secondary" type="button" disabled>ตรวจสอบข้อมูลล่าสุด</button></div>
+ <p class="status" id="cloudStatus" role="status" style="white-space:pre-line;margin-top:14px">ยังไม่ได้เชื่อมต่อฐานข้อมูลออนไลน์ โปรแกรมยังใช้ข้อมูลในเครื่องนี้ตามปกติ</p>
+ <p class="hint">เพื่อความปลอดภัย ต้องสร้างฐานข้อมูลและกำหนดผู้มีสิทธิ์ก่อนใช้งานจริง ระบบไม่เก็บรหัสผ่านไว้ในโปรแกรม และไม่ควรใส่ service_role/secret key ในหน้าเว็บ หากอินเทอร์เน็ตขัดข้อง โปรแกรมจะบันทึกในเครื่องและแจ้งว่ารอซิงก์</p>
+</div>
+<div class="card"><h2>ข้อมูลสถานศึกษาและเวลาเรียน</h2><div class="formgrid"><div class="field"><label>ชื่อสถานศึกษา</label><input id="school" placeholder="ชื่อโรงเรียน"></div><div class="field"><label>ภาคเรียน</label><select id="semester"><option value="1">1</option><option value="2">2</option></select></div><div class="field"><label>ปีการศึกษา (พ.ศ.)</label><input id="year" type="number" min="2500" max="2700"></div><div class="field"><label>คาบต่อวัน (1–12)</label><input id="periods" type="number" min="1" max="12"></div></div><p class="hint">วันเรียนเริ่มต้น: จันทร์–ศุกร์ การเปลี่ยนจำนวนคาบอาจทำให้คาบที่อยู่นอกช่วงใหม่ถูกลบเมื่อกดบันทึก</p><div class="actions"><button id="saveSettings">บันทึกการตั้งค่า</button></div></div><div class="card"><h2>เริ่มต้นใช้งาน</h2><p>กรอกข้อมูลครู ห้องเรียน และรายวิชา → กำหนดภาระสอนรายห้อง → ระบุเวลาที่ครูไม่สะดวก → กดจัดตารางอัตโนมัติ → ตรวจสอบผลและปรับตาราง → พิมพ์หรือส่งออกไฟล์</p><div class="actions"><button class="secondary" id="demo">โหลดข้อมูลตัวอย่าง (ไม่ใช่ข้อมูลจริงของโรงเรียน)</button><button class="secondary" id="backup">สำรองข้อมูล JSON</button><button class="secondary" id="restoreButton">นำเข้าข้อมูล JSON</button><input type="file" id="restoreFile" accept=".json,application/json" hidden><button class="warn" id="reset">ล้างข้อมูลทั้งหมด</button></div><p class="hint">ข้อมูลบันทึกโดยอัตโนมัติในเบราว์เซอร์เครื่องนี้ ควรสำรอง JSON เป็นระยะ โดยเฉพาะก่อนล้างข้อมูลเบราว์เซอร์</p></div></section>
+<section class="panel" id="records"><div class="card"><h2>นำเข้าข้อมูลจำนวนมากจาก Excel / CSV</h2><p class="hint">ไม่จำเป็นต้องพิมพ์ทีละรายการ: คัดลอกตารางใน Excel (รวมบรรทัดหัวตาราง) แล้ววางช่องด้านล่าง หรือเลือกไฟล์ CSV ที่บันทึกจาก Excel โปรแกรมจะเพิ่มเฉพาะรายการใหม่โดยไม่ลบข้อมูลเดิม โดยยึดชื่อรายวิชาเป็นหลัก รหัสวิชาซ้ำกันได้ เช่น วิทยาศาสตร์/เทคโนโลยี สุขศึกษา/พละศึกษา และศิลปะ/ดนตรี-นาฏศิลป์</p>
+<div class="formgrid"><div class="field"><label>ประเภทข้อมูล</label><select id="bulkKind"><option value="assignments">ภาระสอน (รองรับครูผู้สอนสูงสุด 3 คน)</option><option value="teachers">รายชื่อครู</option><option value="classes">ห้องเรียน</option><option value="subjects">รายวิชา</option></select></div><div class="field"><label>เลือกไฟล์ CSV (UTF-8)</label><input type="file" id="bulkFile" accept=".csv,text/csv,.txt,text/plain"></div></div>
+<p class="hint" id="bulkFormat"></p><textarea id="bulkInput" rows="7" style="width:100%;font:inherit;padding:12px;border:1px solid #cbd7e5;border-radius:8px" placeholder="คัดลอกข้อมูลจาก Excel แล้ววางที่นี่"></textarea><div class="actions"><button id="bulkPreview" class="secondary">ตรวจสอบก่อนนำเข้า</button><button id="bulkImport">นำเข้ารายการใหม่</button><button id="bulkTemplate" class="secondary">ดาวน์โหลดแม่แบบ CSV</button><button id="bulkClear" class="secondary">ล้างช่องวางข้อมูล</button></div><div class="status" id="bulkStatus">เลือกประเภทข้อมูล แล้ววางตารางจาก Excel หรือเลือกไฟล์ CSV</div><div id="bulkPreviewTable" class="tablewrap"></div><p class="hint">หัวตารางที่รองรับ: ห้องเรียน / รหัสวิชา / รายวิชา / ชื่อครู 1 / ชื่อครู 2 / ชื่อครู 3 / คาบต่อสัปดาห์ (ภาระสอน) หรือใช้แม่แบบที่โปรแกรมเตรียมไว้ หากนำเข้าภาระสอน โปรแกรมจะสร้างชื่อครู ห้องเรียน และชื่อรายวิชาที่ยังไม่มีโดยอัตโนมัติ โดยรหัสวิชาเดียวกันใช้กับชื่อวิชาต่างกันได้ ใช้ข้อมูลสำรอง JSON ก่อนนำเข้าข้อมูลจริงจำนวนมาก</p></div><div class="card"><h2>ครูผู้สอน</h2><form id="teacherForm" class="formgrid"><div class="field"><label>ชื่อ–สกุลครู</label><input id="teacherName" required placeholder="เช่น ครู ก"></div><button type="submit">+ เพิ่มครู</button></form><div id="teachersTable" class="tablewrap"></div></div><div class="card"><h2>ชั้นเรียน / ห้องเรียน</h2><form id="classForm" class="formgrid"><div class="field"><label>ชื่อห้องเรียน</label><input id="className" required placeholder="เช่น ป.1, ม.1/1"></div><button type="submit">+ เพิ่มห้องเรียน</button></form><div id="classesTable" class="tablewrap"></div></div><div class="card"><h2>รายวิชา</h2><form id="subjectForm" class="formgrid"><div class="field"><label>รหัสวิชา (เว้นว่างได้)</label><input id="subjectCode" placeholder="ว21102"></div><div class="field"><label>ชื่อรายวิชา</label><input id="subjectName" required placeholder="วิทยาศาสตร์"></div><button type="submit">+ เพิ่มรายวิชา</button></form><div id="subjectsTable" class="tablewrap"></div></div></section>
+<section class="panel" id="assign"><div class="card noprint" style="border:2px solid #a9c7ea;background:#f5faff"><h2>นำเข้าภาระสอนจาก Excel / CSV โดยตรง</h2><p class="hint">ใช้ไฟล์ 7 คอลัมน์: ห้องเรียน / รหัสวิชา / รายวิชา / ชื่อครู 1 / ชื่อครู 2 / ชื่อครู 3 / คาบต่อสัปดาห์ — เมื่อยืนยันแล้ว ระบบจะสร้างข้อมูลครู ห้องเรียน รายวิชา และภาระสอนในหน้านี้อัตโนมัติ ไม่ต้องเพิ่มซ้ำทีละวิชา (รองรับไฟล์ CSV UTF-8 และคอลัมน์ชื่อครู 4, 5, ... เพิ่มก่อนคอลัมน์คาบต่อสัปดาห์ได้)</p><div class="formgrid"><div class="field"><label>เลือกไฟล์ภาระสอน CSV</label><input type="file" id="assignCsvFile" accept=".csv,text/csv"></div><div class="field"><label>การจัดการ</label><button type="button" id="assignCsvImport">ตรวจสอบและนำเข้าภาระสอน</button></div></div><div id="assignCsvStatus" class="status" role="status">ภาระสอนที่บันทึก: <b id="assignCount">0</b> รายการ</div><p class="hint">หมายเหตุ: ถ้าเคยนำเข้าข้อมูลแล้ว ระบบจะข้ามรายการตรงกันและแจ้งกรณีข้อมูลเดิมต่างกันโดยไม่เขียนทับอัตโนมัติ ก่อนเปลี่ยนข้อมูลจำนวนมากควรสำรอง JSON</p></div><div class="card"><h2>กำหนดภาระสอนรายห้อง</h2><p class="hint">1 รายการ = 1 รายวิชาใน 1 ห้อง โดยเลือกครูผู้สอนร่วมได้สูงสุด 3 คน ระบุจำนวนคาบต่อสัปดาห์ โปรแกรมจะจัดคาบให้ครบตามจำนวน</p><form id="assignmentForm" class="formgrid"><div class="field"><label>ห้องเรียน</label><select id="aClass" required></select></div><div class="field"><label>รายวิชา</label><select id="aSubject" required></select></div><div class="field"><label>ครูผู้สอน 1</label><select id="aTeacher" required></select></div><div class="field"><label>ครูผู้สอน 2 (ถ้ามี)</label><select id="aTeacher2"></select></div><div class="field"><label>ครูผู้สอน 3 (ถ้ามี)</label><select id="aTeacher3"></select></div><div class="field"><label>คาบ / สัปดาห์</label><input id="aHours" type="number" min="1" max="60" value="3" required></div><button type="submit">+ เพิ่มภาระสอน</button></form><div id="assignTable" class="tablewrap"></div></div><div class="card"><h2>เวลาที่ครูไม่สะดวกสอน</h2><p class="hint">ใช้กำหนดเวลาประชุม งานประจำ หรือคาบที่ไม่ต้องการให้จัดการสอน (เป็นข้อห้ามเด็ดขาด)</p><div class="formgrid"><div class="field"><label>เลือกครู</label><select id="blockTeacher"></select></div><div class="field"><label>วัน</label><select id="blockDay"></select></div><div class="field"><label>คาบ</label><select id="blockPeriod"></select></div><button id="addBlock">+ เพิ่มเวลาห้ามสอน</button></div><div id="blockTable" class="tablewrap"></div></div></section>
+<section class="panel" id="schedulePanel"><div class="card noprint"><h2>จัดตารางอัตโนมัติ</h2><p class="hint">ระบบจะป้องกันครูสอนชนกัน ห้องเรียนชนกัน และหลีกเลี่ยงช่วงเวลาที่ครูไม่สะดวก รวมทั้งพยายามกระจายวิชาในแต่ละวัน การจัดใหม่จะทับตารางเดิม</p><div class="actions"><button id="generate">จัดตารางสอนอัตโนมัติ</button><button id="clearSchedule" class="secondary">ล้างเฉพาะตาราง</button><button id="validateNow" class="secondary">ตรวจสอบตาราง</button></div><div id="scheduleStatus" class="status">ยังไม่ได้จัดตารางสอน</div></div><div class="card noprint" id="subjectColorCard">
+ <h2>กำหนดสีประจำรายวิชา</h2>
+ <p class="hint">เลือกสีหนึ่งครั้งต่อชื่อวิชา ระบบจะใช้สีเดียวกันทุกห้องและตารางสอนรายครู ตัวอย่าง: คณิตศาสตร์เป็นสีเขียวอ่อน • บันทึกสีลงข้อมูลสำรอง JSON และใช้สีในไฟล์ Excel / PDF ด้วย</p>
+ <div class="subject-color-tools"><label style="display:flex;align-items:center;gap:8px"><input id="enableSubjectColors" type="checkbox" style="width:18px;height:18px" checked> แสดงสีรายวิชาบนหน้าจอและเอกสาร</label><button id="resetSubjectColors" type="button" class="secondary">คืนค่าสีแนะนำ</button></div>
+ <div id="subjectColorLegend" class="color-legend"></div>
+ <details class="color-details" id="subjectColorDetails"><summary>คลิกเพื่อเลือกหรือเปลี่ยนสีแต่ละรายวิชา</summary><div id="subjectColorList" class="subject-color-list"></div></details>
+ <p class="hint" style="margin-bottom:0">PDF: เมื่อสั่งพิมพ์จาก Chrome/Edge ให้เลือก “พิมพ์พื้นหลัง / Background graphics” หากสีไม่ปรากฏ • Excel จะมีสีพื้นเซลล์ตามที่เลือก</p>
+</div>
+<div class="card printable"><div class="toolbar noprint"><div class="field"><label>รูปแบบตาราง</label><select id="viewMode"><option value="class">ตารางเรียนรายห้อง</option><option value="teacher">ตารางสอนรายครู</option></select></div><div class="field"><label>เลือกห้อง / ครู</label><select id="viewTarget"></select></div><div class="field" style="max-width:175px"><label for="exportFontSchedule">ฟอนต์เอกสาร</label><select id="exportFontSchedule" class="export-font-input"><option value="TH Sarabun New">TH Sarabun New</option><option value="TH SarabunPSK">TH SarabunPSK</option><option value="Sarabun">Sarabun</option><option value="Tahoma">Tahoma</option></select></div><div class="field" style="max-width:115px"><label for="exportSizeSchedule">ขนาดฟอนต์ตั้งต้น (pt)</label><select id="exportSizeSchedule" class="export-size-input"><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option></select></div><button id="printOne" type="button">พิมพ์ตารางที่เลือก / บันทึก PDF</button><button id="exportSelectedExcel" type="button" style="background:#177247">ส่งออก Excel ตารางที่เลือก (.xlsx)</button><button id="exportAllExcelSchedule" type="button" class="secondary">Excel ทุกห้อง / ทุกครู</button><div class="field" id="adviserBox" style="max-width:300px"><label>ครูประจำชั้น (ถ้ามี)</label><input id="adviserInput" placeholder="ระบุชื่อครูประจำชั้น เช่น ครู ก / ครู ข"></div></div><div class="school-document-heading"><h2 id="printTitle">ตารางเรียน</h2><div id="printTerm" class="doc-term"></div><div id="viewMeta"></div><div id="teacherLoadMeta" aria-live="polite"></div></div><div id="scheduleGrid" class="tablewrap"></div><div id="officialTimetableFooter" class="official-timetable-footer"></div><p class="hint noprint"><b>รูปแบบเอกสารทางการ:</b> หัวเอกสารระบุโรงเรียน ภาคเรียน ปีการศึกษา และข้อมูลห้อง/ครู พร้อมสรุปจำนวนคาบและช่องลงชื่อผู้จัดตารางหรือครูผู้สอนและผู้ตรวจสอบ เช่นเดียวกับเอกสารสอนแทน • PDF และ Excel ใช้ฟอนต์ TH Sarabun New ได้ และพิมพ์ A4 แนวนอน</p><p class="hint noprint">ตารางตามแม่แบบ ป.1: วันด้านซ้าย คาบและเวลาอยู่ด้านบน พักกลางวันระหว่างคาบ 4 และ 5 • สามารถส่งออก Excel เฉพาะห้อง/ครูที่เลือก หรือทุกห้อง/ครูได้โดยใช้ฟอนต์ตามที่ตั้งไว้ • <b>หากต้องการให้ PDF แสดงครูประจำชั้น ให้กรอกในช่องด้านบนแล้วคลิกออกจากช่องเพื่อบันทึก</b></p><p class="hint noprint">คลิกช่องคาบเรียนเพื่อเพิ่ม ย้าย หรือลบรายการได้ การแก้ไขด้วยตนเองจะตรวจสอบคาบชนก่อนบันทึก การล็อกคาบใช้ป้องกันการเปลี่ยนคาบนั้นขณะจัดตารางอัตโนมัติ</p></div></section>
+<section class="panel" id="substitution">
+<div class="card noprint"><h2>ระบบจัดสอนแทนรายวัน</h2><p class="hint">เลือกวันที่และครูที่ไม่สามารถสอน ระบบจะดึงคาบจากตารางสอนหลักและแนะนำครูที่ว่างในคาบนั้นโดยอัตโนมัติ เลือกครูเองได้ และข้อมูลตารางสอนหลักจะไม่เปลี่ยน</p>
+<div class="formgrid"><div class="field"><label>วันที่จัดสอนแทน</label><input type="date" id="subDate"></div><div class="field"><label>ครูที่ไม่สามารถเข้าสอน</label><select id="subAbsent"></select></div><div class="field"><label>สาเหตุ</label><select id="subReason"><option>ลาป่วย</option><option>ลากิจ</option><option>ไปราชการ</option><option>อบรม/ประชุม</option><option>อื่น ๆ</option></select></div></div>
+<div class="actions"><button id="subPrepare">แสดงคาบที่ต้องจัดสอนแทน</button><button id="subAuto" class="secondary">จัดครูสอนแทนอัตโนมัติทุกคาบที่ยังว่าง</button><button id="subPrint" class="secondary">พิมพ์ตารางสอนแทนรายวัน / PDF (ทางการ)</button><button id="subXlsx">ส่งออก Excel ตารางสอนแทนรายวัน (.xlsx)</button><button id="subCsv" class="secondary">ส่งออกประวัติสอนแทน CSV</button></div><div class="status" id="subStatus">กรุณาเลือกวันที่และครู</div>
+<div class="formgrid" style="margin-top:14px"><div class="field" style="max-width:280px"><label>แบบอักษรเอกสารสอนแทน (PDF / Excel)</label><select id="exportFontSub" class="export-font-input"><option value="TH Sarabun New">TH Sarabun New (แนะนำ)</option><option value="TH SarabunPSK">TH SarabunPSK</option><option value="Sarabun">Sarabun</option><option value="Tahoma">Tahoma</option></select></div><div class="field" style="max-width:210px"><label>ขนาดตัวอักษร (pt)</label><select id="exportSizeSub" class="export-size-input"><option value="12">12</option><option value="14">14 (แนะนำ)</option><option value="16">16</option><option value="18">18</option></select></div></div>
+<p class="hint">การส่งออกเอกสารรายวันจะรวบรวมรายการสอนแทนที่บันทึกไว้ของครูทุกคนในวันที่เลือก และใช้แบบอักษรชุดเดียวกับตารางสอนหลัก หากยังไม่ได้บันทึกการจัดสอนแทน จะไม่มีรายการให้ส่งออก</p></div>
+<div class="card printable"><h2 id="subPrintTitle">ตารางจัดสอนแทน</h2><div id="subGrid" class="tablewrap"></div><p class="hint noprint">ในช่องครูผู้สอนแทน จะแสดงครูที่ว่างและไม่มีงานสอนแทนอื่นในเวลาเดียวกัน เรียงตามจำนวนคาบสอนแทนสะสม (น้อยไปมาก) ปุ่มบันทึกบันทึกได้ครั้งละคาบ</p></div>
+<div class="card noprint"><h2>ตัวอย่างเอกสารสอนแทนรายวัน (แบบทางการ)</h2><div id="subOfficialPreview" class="tablewrap"></div><p class="hint">ตัวอย่างนี้รวมรายการสอนแทนที่บันทึกแล้วทั้งหมดในวันที่เลือก ไม่จำกัดเฉพาะครูที่กำลังแสดงด้านบน เอกสาร PDF และ Excel ใช้หัวตารางและชื่อฟอนต์เดียวกัน</p></div>
+<div class="card noprint"><h2>ประวัติการจัดสอนแทนและภาระงานสะสม</h2><div id="subTotals" class="tablewrap"></div><h3>รายการที่บันทึก</h3><div id="subHistory" class="tablewrap"></div></div>
+</section>
+<section class="panel" id="reports"><div class="card"><h2>สถานะการจัดตาราง</h2><div class="stats" id="stats"></div><div class="status" id="validation"></div></div><div class="card"><h2>สรุปจำนวนชั่วโมงสอนรายครู (ต่อสัปดาห์)</h2>
+<p class="hint">นับจากคาบเรียนปกติ โดย <b>1 คาบ = 1 ชั่วโมงสอนตามตารางเรียน</b> (คาบละ 50 นาที) • ครูร่วมสอนนับให้แต่ละคนคนละ 1 ชั่วโมงต่อคาบ • ไม่รวมชั่วโมงสอนแทน • คอลัมน์ “จัดแล้ว” แสดงเฉพาะคาบที่อยู่ในตารางจริง</p>
+<div class="actions"><button id="exportTeacherLoadXlsx" type="button" style="background:#177247">ส่งออก Excel สรุปชั่วโมงสอน (.xlsx)</button><button id="printTeacherLoad" type="button" class="secondary">พิมพ์สรุปชั่วโมงสอน / PDF</button></div>
+<div id="teacherLoadSummary" class="tablewrap"><div id="summaryTable"></div></div></div><div class="card"><h2>ตั้งค่าฟอนต์สำหรับ PDF และ Excel</h2><div class="formgrid"><div class="field" style="max-width:290px"><label for="exportFontReport">แบบอักษร (ใช้กับทั้ง PDF และ Excel)</label><select id="exportFontReport" class="export-font-input"><option value="TH Sarabun New">TH Sarabun New (แนะนำ)</option><option value="TH SarabunPSK">TH SarabunPSK</option><option value="Sarabun">Sarabun</option><option value="Tahoma">Tahoma</option></select></div><div class="field" style="max-width:240px"><label for="exportSizeReport">ขนาดเนื้อหา (pt)</label><select id="exportSizeReport" class="export-size-input"><option value="12">12</option><option value="14">14 (แนะนำสำหรับตาราง)</option><option value="16">16</option><option value="18">18</option></select></div></div><p class="hint">ใช้ตัวเลือกเดียวกันกับเมนูจัดตารางสอน • ไฟล์ Excel จะบันทึกชื่อฟอนต์ลงในรูปแบบเซลล์ ส่วน PDF ใช้ฟอนต์จากเครื่องเมื่อสั่งพิมพ์ และอาจปรับสเกลให้พอดีหน้า A4 โปรดติดตั้ง TH Sarabun New บนคอมพิวเตอร์ก่อนพิมพ์หากต้องการให้แสดงฟอนต์ตรงตามที่เลือก</p></div><div class="card"><h2>ส่งออกข้อมูล</h2><div class="actions"><button id="exportCSV">ดาวน์โหลดตารางสอนทุกห้อง (CSV)</button><button class="secondary" id="exportTeacherCSV">ดาวน์โหลดตารางสอนรายครู (CSV)</button><button class="secondary" id="backup2">สำรองข้อมูลทั้งหมด (JSON)</button><button id="exportXLSX">ส่งออก Excel ตารางพร้อมใช้ (.xlsx)</button><button class="secondary" id="printAll">พิมพ์ทุกตาราง / บันทึก PDF</button><button class="secondary" id="printSubHistory">พิมพ์สรุปสอนแทน / PDF</button></div><p class="hint">ไฟล์ Excel จะแยกชีตตารางเรียนทุกห้อง ตารางสอนทุกครู และประวัติสอนแทน พร้อมสีรายวิชาที่กำหนดไว้ โดยจัดวันเป็นแถว คาบเป็นคอลัมน์ตามแม่แบบโรงเรียน ส่วน PDF ใช้คำสั่งพิมพ์แล้วเลือก Save as PDF ในเบราว์เซอร์; สำรอง JSON เพื่อแก้ไขข้อมูลในโปรแกรมภายหลัง</p></div></section>
+</main><dialog id="editDialog" style="border:1px solid #d1dfef;border-radius:12px;max-width:500px;width:92%;padding:20px"><h2 id="editTitle">แก้ไขคาบเรียน</h2><p id="editDesc" class="hint"></p><div class="field"><label>รายการภาระสอน</label><select id="editAssignment"></select></div><p class="hint">เลือก “ว่าง” เพื่อลบคาบเรียน หรือเลือกภาระสอนเพื่อกำหนดลงในช่องนี้</p><div class="actions"><button id="saveCell">บันทึก</button><button class="secondary" id="toggleLock">ล็อก/ปลดล็อกคาบ</button><button class="secondary" id="cancelCell">ยกเลิก</button></div><p id="cellMessage" class="status hide"></p></dialog>
+<script>
+'use strict';
+const DAYS=['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'], KEY='schoolTimetableV1';
+const initial=()=>({school:'โรงเรียนบ้านตลิ่งชัน',semester:'2',year:2569,periods:7,classAdvisors:{},subjectColors:{},colorizeSchedules:true,exportSettings:{font:'TH Sarabun New',size:14},teachers:[],classes:[],subjects:[],assignments:[],blocks:[],slots:[],locks:[]});
+let db=initial(), editing=null;
+const assignmentTeachers=a=>[...new Set((Array.isArray(a?.teacherIds)&&a.teacherIds.length?a.teacherIds:[a?.teacherId,a?.teacher2Id,a?.teacher3Id]).filter(Boolean))];const teaches=(a,id)=>assignmentTeachers(a).includes(id);const teacherLabel=a=>assignmentTeachers(a).map(id=>nameOf('teachers',id)).join(' / ');
+const $=id=>document.getElementById(id);const uid=()=> 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);const nameOf=(kind,id)=>db[kind].find(v=>v.id===id)?.name||'(ข้อมูลถูกลบ)';const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}function load(){try{let raw=JSON.parse(localStorage.getItem(KEY));if(raw&&Array.isArray(raw.assignments)&&Array.isArray(raw.slots))db={...initial(),...raw,classAdvisors:raw.classAdvisors||{}}}catch(e){alert('ไม่สามารถเปิดข้อมูลเดิมได้: '+e.message)}}
+// การส่งออกมีการตั้งค่าฟอนต์เดียวกันทุกเมนู และบันทึกในสำรอง JSON ของโปรแกรม
+const OUTPUT_FONTS=['TH Sarabun New','TH SarabunPSK','Sarabun','Tahoma'];
+function getOutputStyle(){
+ const raw=db.exportSettings||{};
+ return {font:OUTPUT_FONTS.includes(raw.font)?raw.font:'TH Sarabun New',size:[12,14,16,18].includes(Number(raw.size))?Number(raw.size):14};
+}
+// สีถูกผูกกับ "ชื่อรายวิชา" (ไม่ใช่รหัสวิชา) เพื่อรองรับหลายรหัส/หลายห้องอย่างสอดคล้องกัน
+const SUBJECT_COLOR_PRESETS=[
+  [/คณิตศาสตร์|คณิต/, '#DDF3D6'],
+  [/วิทยาศาสตร์|วิทยา/, '#D8ECFF'],
+  [/เทคโนโลยี|คอมพิวเตอร์|เขียนโปรแกรม/, '#E4E5FF'],
+  [/ภาษาไทย/, '#FFF2C7'],
+  [/ภาษาอังกฤษ|อังกฤษ/, '#EDE0FF'],
+  [/สังคม|ประวัติ|ศาสนา|หน้าที่พลเมือง/, '#FFE7D2'],
+  [/สุขศึกษา|พลศึกษา|พละศึกษา|กีฬา|ออกกำลังกาย/, '#D7F3EF'],
+  [/ศิลปะ|ดนตรี|นาฏศิลป์/, '#FFE1E9'],
+  [/การงาน|อาหาร|เครื่องดื่ม|ปลูกผัก|เกษตร/, '#E8EFCD'],
+  [/ลูกเสือ|แนะแนว|ติว|ชุมนุม|โฮมรูม/, '#E9EFF5']
+];
+const SOFT_COLOR_POOL=['#FDEAD8','#DCEFE4','#F5E2FA','#E8ECFF','#E4F4F4','#FFF0E3','#F2EECE','#FBE7EC'];
+function subjectColorKey(name){return String(name??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th')}
+function validColor(x){return /^#[0-9A-Fa-f]{6}$/.test(String(x||''))?String(x).toUpperCase():null}
+function defaultSubjectColor(name){
+ const key=subjectColorKey(name);
+ for(const [re,color] of SUBJECT_COLOR_PRESETS)if(re.test(key))return color;
+ let hash=0;for(const ch of key)hash=(Math.imul(hash,31)+ch.codePointAt(0))>>>0;
+ return SOFT_COLOR_POOL[hash%SOFT_COLOR_POOL.length];
+}
+function lessonColor(name){
+ if(db.colorizeSchedules===false)return null;
+ const key=subjectColorKey(name);
+ if(!key)return null;
+ return validColor((db.subjectColors||{})[key])||defaultSubjectColor(name);
+}
+function textOnColor(color){if(!color)return '#17253C';const n=parseInt(color.slice(1),16),r=n>>>16,g=(n>>>8)&255,b=n&255;return .2126*r+.7152*g+.0722*b<148?'#FFFFFF':'#17253C'}
+function getUniqueSubjectNames(){
+ const names=new Map();for(const su of db.subjects){const key=subjectColorKey(su.name);if(key&&!names.has(key))names.set(key,su.name)}
+ return [...names.entries()].sort((a,b)=>a[1].localeCompare(b[1],'th'));
+}
+function renderSubjectColorEditor(){
+ const checkbox=$('enableSubjectColors');if(!checkbox)return;
+ checkbox.checked=db.colorizeSchedules!==false;
+ const names=getUniqueSubjectNames();
+ $('subjectColorList').innerHTML=names.length?names.map(([key,name])=>{
+  const color=validColor((db.subjectColors||{})[key])||defaultSubjectColor(name);
+  return '<label class="subject-color-item"><span class="swatch" style="background:'+color+'"></span><span class="subject-color-name">'+escapeHTML(name)+'</span><input type="color" aria-label="เลือกสี '+escapeHTML(name)+'" data-color-key="'+escapeHTML(key)+'" value="'+color+'"></label>';
+ }).join(''):'<p class="hint">ยังไม่มีรายวิชา กรุณานำเข้าภาระสอนก่อน</p>';
+ const display=names.slice(0,15);
+ $('subjectColorLegend').innerHTML=display.map(([key,name])=>{const color=lessonColor(name);return '<span style="background-color:'+(color||'#FFF')+';color:'+textOnColor(color)+'">'+escapeHTML(name)+'</span>'}).join('')+(names.length>15?'<span>และอีก '+(names.length-15)+' วิชา</span>':'');
+}
+function syncExportSettings(){
+ const opt=getOutputStyle();
+ document.querySelectorAll('.export-font-input').forEach(el=>el.value=opt.font);
+ document.querySelectorAll('.export-size-input').forEach(el=>el.value=String(opt.size));
+}
+function setExportSettings(key,value){
+ const opt=getOutputStyle();opt[key]=key==='size'?Number(value):value;
+ db.exportSettings=opt;save();syncExportSettings();
+}
+function initExportControls(){
+ document.querySelectorAll('.export-font-input').forEach(el=>el.addEventListener('change',()=>setExportSettings('font',el.value)));
+ document.querySelectorAll('.export-size-input').forEach(el=>el.addEventListener('change',()=>setExportSettings('size',el.value)));
+ syncExportSettings();
+}
+function selectHTML(items,selected){return items.map(x=>`<option value="${escapeHTML(x.id)}" ${x.id===selected?'selected':''}>${escapeHTML(x.name)}</option>`).join('')}
+function fillSelect(id,items,placeholder='-- เลือก --'){const el=$(id),old=el.value;el.innerHTML=`<option value="">${placeholder}</option>`+selectHTML(items,old);if(items.some(x=>x.id===old))el.value=old}
+function table(headers,rows){return `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${headers.length}">ยังไม่มีข้อมูล</td></tr>`}</tbody></table>`}
+function fieldEdit(kind,obj,key){return `<input value="${escapeHTML(obj[key])}" aria-label="แก้ไขข้อมูล" data-kind="${kind}" data-id="${obj.id}" data-key="${key}">`}
+function removeButton(kind,id){return `<button class="mini warn" data-remove="${kind}" data-id="${id}">ลบ</button>`}
+function render(){ syncExportSettings(); $('school').value=db.school;$('semester').value=db.semester;$('year').value=db.year;$('periods').value=db.periods;
+$('teachersTable').innerHTML=table(['ชื่อ–สกุลครู','จัดการ'],db.teachers.map(o=>`<tr><td>${fieldEdit('teachers',o,'name')}</td><td>${removeButton('teachers',o.id)}</td></tr>`));
+$('classesTable').innerHTML=table(['ห้องเรียน','จัดการ'],db.classes.map(o=>`<tr><td>${fieldEdit('classes',o,'name')}</td><td>${removeButton('classes',o.id)}</td></tr>`));
+$('subjectsTable').innerHTML=table(['รหัสวิชา','ชื่อวิชา','จัดการ'],db.subjects.map(o=>`<tr><td>${fieldEdit('subjects',o,'code')}</td><td>${fieldEdit('subjects',o,'name')}</td><td>${removeButton('subjects',o.id)}</td></tr>`));
+fillSelect('aClass',db.classes);fillSelect('aSubject',db.subjects);fillSelect('aTeacher',db.teachers);fillSelect('aTeacher2',db.teachers,'-- ไม่มีครูผู้สอนร่วม --');fillSelect('aTeacher3',db.teachers,'-- ไม่มีครูผู้สอนร่วม --');fillSelect('blockTeacher',db.teachers);$('blockDay').innerHTML=DAYS.map((v,i)=>`<option value="${i}">${v}</option>`).join('');$('blockPeriod').innerHTML=Array.from({length:db.periods},(_,i)=>`<option value="${i}">คาบ ${i+1}</option>`).join('');
+if($('assignCount'))$('assignCount').textContent=db.assignments.length;
+$('assignTable').innerHTML=table(['ห้อง','รายวิชา','ครูผู้สอนร่วม','คาบ/สัปดาห์','จัดการ'],db.assignments.map(a=>`<tr><td>${escapeHTML(nameOf('classes',a.classId))}</td><td>${escapeHTML(subjectLabel(a.subjectId))}</td><td>${escapeHTML(teacherLabel(a))}</td><td><input type="number" min="1" max="60" value="${a.hours}" data-hours="${a.id}"></td><td>${removeButton('assignments',a.id)}</td></tr>`));
+$('blockTable').innerHTML=table(['ครู','วัน','คาบ','จัดการ'],db.blocks.map(b=>`<tr><td>${escapeHTML(nameOf('teachers',b.teacherId))}</td><td>${DAYS[b.day]}</td><td>${b.period+1}</td><td>${removeButton('blocks',b.id)}</td></tr>`));
+renderTarget();renderGrid();renderReports();renderSubjectColorEditor()}
+function subjectLabel(id){let s=db.subjects.find(o=>o.id===id);return s?(s.code?s.code+' ':'')+s.name:'(ข้อมูลถูกลบ)'}
+function assignmentLabel(a){return `${nameOf('classes',a.classId)} / ${subjectLabel(a.subjectId)} / ${teacherLabel(a)}`}
+function getSlot(cls,day,period){return db.slots.find(s=>s.classId===cls&&s.day===day&&s.period===period)}
+function lockKey(cls,day,period){return `${cls}|${day}|${period}`}
+function renderTarget(){let mode=$('viewMode').value,items=mode==='class'?db.classes:db.teachers;fillSelect('viewTarget',items);if(items.length&&!$('viewTarget').value)$('viewTarget').value=items[0].id}
+// ภาระสอนรายครู: คาบร่วมสอนนับให้ครูทุกคน แต่หนึ่งคาบนับเพียงครั้งเดียวต่อคน
+function teacherTeachingLoad(teacherId){
+ const items=db.assignments.filter(a=>teaches(a,teacherId));
+ const ids=new Set(items.map(a=>a.id));
+ const planned=items.reduce((sum,a)=>sum+(Number(a.hours)||0),0);
+ const scheduled=db.slots.filter(s=>ids.has(s.assignmentId)).length;
+ const classes=new Set(items.map(a=>a.classId)).size;
+ const subjects=new Set(items.map(a=>nameOf('subjects',a.subjectId))).size;
+ return {planned,scheduled,remaining:Math.max(0,planned-scheduled),classes,subjects,extra:Math.max(0,scheduled-planned)};
+}
+function teacherTeachingHoursLabel(teacherId){
+ const load=teacherTeachingLoad(teacherId);
+ if(load.planned===load.scheduled)return 'จำนวน '+load.scheduled+' ชั่วโมง/สัปดาห์';
+ return 'จัดลงตารางแล้ว '+load.scheduled+' ชั่วโมง/สัปดาห์ จากภาระสอน '+load.planned+' ชั่วโมง/สัปดาห์';
+}
+function teacherLoadRows(){
+ return db.teachers.slice().sort((a,b)=>a.name.localeCompare(b.name,'th')).map((t,index)=>{
+  const v=teacherTeachingLoad(t.id);
+  return {index:index+1,name:t.name,...v,status:v.extra?'เกินภาระสอน':v.remaining?'ยังจัดไม่ครบ':'ครบ'};
+ });
+}
+function renderGrid(){
+ const mode=$('viewMode').value,target=$('viewTarget').value;
+ const kind=mode==='class'?'classes':'teachers';const obj=db[kind].find(x=>x.id===target);
+ const title=mode==='class'?'ตารางเรียน':'ตารางสอน';
+ const identity=mode==='class'?'ชั้น '+(obj?.name||'—'):'ครูผู้สอน '+(obj?.name||'—');
+ const advisers=mode==='class'?(db.classAdvisors?.[target]||''):'';
+ $('printTitle').textContent=title+' '+(db.school||'โรงเรียน');
+  $('printTerm').textContent='ภาคเรียนที่ '+db.semester+' ปีการศึกษา '+db.year;
+ $('viewMeta').textContent=identity+(advisers?'   ครูประจำชั้น '+advisers:'');
+ const teacherLoadMeta=$('teacherLoadMeta');
+ teacherLoadMeta.classList.toggle('active',mode==='teacher'&&!!obj);
+ teacherLoadMeta.textContent=mode==='teacher'&&obj?teacherTeachingHoursLabel(obj.id):'';
+ $('adviserBox').style.display=mode==='class'?'flex':'none';
+ $('adviserInput').value=advisers;
+ const count=schoolPeriods(),lunch=count>4;
+ let head='<tr><th class="day-head">วัน</th>';
+ for(let p=0;p<count;p++){
+   if(p===4)head+='<th class="lunch-head">พักกลางวัน<span class="period-time">11.50–13.00 น.</span></th>';
+   head+='<th class="period-head">คาบ '+(p+1)+'<span class="period-time">'+escapeHTML(SCHOOL_TIMES[p]||'')+' น.</span></th>';
+ }
+ head+='</tr>';
+ let body='';
+ for(let d=0;d<5;d++){
+   body+='<tr><th class="day-name">'+DAYS[d]+'</th>';
+   for(let p=0;p<count;p++){
+     if(p===4&&d===0)body+='<td class="lunch-cell" rowspan="5"><div class="lunch-vertical">พักกลางวัน</div></td>';
+     if(!obj){body+='<td class="lesson">—</td>';continue}
+     const slot=db.slots.find(sl=>sl.day===d&&sl.period===p&&(mode==='class'?sl.classId===target:db.assignments.some(a=>a.id===sl.assignmentId&&teaches(a,target))));
+     const a=slot?db.assignments.find(x=>x.id===slot.assignmentId):null;
+     const su=a?db.subjects.find(x=>x.id===a.subjectId):null;
+     const locked=slot&&db.locks.includes(lockKey(slot.classId,d,p));
+     const teacher=mode==='class'?teacherLabel(a):a?nameOf('classes',a.classId):'';
+     const bg=a?lessonColor(su?.name):null,ink=textOnColor(bg);
+     body+='<td style="'+(bg?'--lesson-bg:'+bg+';background-color:'+bg+';color:'+ink+';':'')+'" class="lesson '+(a?'filled ':'')+(locked?'locked':'')+'" data-cell="1" data-day="'+d+'" data-period="'+p+'" data-class="'+escapeHTML(mode==='class'?target:(a?.classId||''))+'">'+
+       (a?'<div class="subject">'+escapeHTML(su?.name||'')+'</div><div class="teacher">'+escapeHTML(teacher)+'</div>'+(locked?'<span class="badge">ล็อก</span>':''):'<span class="hint">—</span>')+'</td>';
+   }
+   body+='</tr>';
+ }
+ $('scheduleGrid').innerHTML='<table class="schedule school-preview"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+  const official=$('officialTimetableFooter');
+  if(official){
+    const countPlaced=mode==='class'
+      ?db.slots.filter(sl=>sl.classId===target).length
+      :obj?teacherTeachingLoad(obj.id).scheduled:0;
+    const summary=mode==='class'?'จัดตารางเรียนแล้ว '+countPlaced+' คาบ/สัปดาห์':obj?teacherTeachingHoursLabel(obj.id):'';
+    official.innerHTML=obj?'<div class="doc-hours">'+escapeHTML(summary)+'</div><div class="doc-signatures"><div>ลงชื่อ ..........................................................<br>'+(mode==='class'?'ผู้จัดตารางเรียน':'ครูผู้สอน')+'</div><div>ลงชื่อ ..........................................................<br>ผู้ตรวจสอบ</div></div>':'';
+  }
+}
+function usedHours(id){return db.slots.filter(s=>s.assignmentId===id).length}function validation(){let issues=[],totalNeed=db.assignments.reduce((s,a)=>s+a.hours,0),assigned=db.slots.length;for(let a of db.assignments){let n=usedHours(a.id);if(n!==a.hours)issues.push(`ภาระสอนไม่ครบ/เกิน: ${assignmentLabel(a)} ${n}/${a.hours} คาบ`)}for(let c of db.classes){let need=db.assignments.filter(a=>a.classId===c.id).reduce((s,a)=>s+a.hours,0);if(need>5*db.periods)issues.push(`${c.name}: ต้องการ ${need} คาบ แต่มี ${5*db.periods} คาบ`)}for(let t of db.teachers){let need=db.assignments.filter(a=>teaches(a,t.id)).reduce((s,a)=>s+a.hours,0),blocked=db.blocks.filter(b=>b.teacherId===t.id).length;if(need>5*db.periods-blocked)issues.push(`${t.name}: ภาระ ${need} คาบ เกินเวลาที่สอนได้ ${5*db.periods-blocked} คาบ`)}
+for(let i=0;i<db.slots.length;i++){let s=db.slots[i],a=db.assignments.find(x=>x.id===s.assignmentId);if(!a){issues.push('พบคาบอ้างอิงภาระสอนที่ถูกลบ');continue}if(s.classId!==a.classId)issues.push('ข้อมูลห้องในคาบไม่สอดคล้องกับภาระสอน');if(db.blocks.some(b=>assignmentTeachers(a).includes(b.teacherId)&&b.day===s.day&&b.period===s.period))issues.push(`ครู ${teacherLabel(a)} ถูกจัดในช่วงห้ามสอน`);for(let j=0;j<i;j++){let t=db.slots[j],b=db.assignments.find(x=>x.id===t.assignmentId);if(t.day===s.day&&t.period===s.period){if(t.classId===s.classId)issues.push(`ห้อง ${nameOf('classes',s.classId)} ชนกัน วัน${DAYS[s.day]} คาบ ${s.period+1}`);if(b&&assignmentTeachers(b).some(id=>assignmentTeachers(a).includes(id)))issues.push(`ครู ${teacherLabel(a)} ชนกัน วัน${DAYS[s.day]} คาบ ${s.period+1}`)}}}
+return {issues:[...new Set(issues)],totalNeed,assigned}}
+function renderReports(){let v=validation();$('stats').innerHTML=[['ภาระสอนที่กำหนด',v.totalNeed+' คาบ'],['จัดแล้ว',v.assigned+' คาบ'],['คงเหลือ',Math.max(0,v.totalNeed-v.assigned)+' คาบ'],['ข้อควรตรวจสอบ',v.issues.length+' รายการ']].map(([x,y])=>`<div class="stat"><span>${x}</span><b>${y}</b></div>`).join('');$('validation').className='status '+(v.issues.length?'error':'ok');$('validation').textContent=v.issues.length?v.issues.join('\n'):'ไม่พบปัญหาคาบชนหรือภาระสอนที่ไม่ครบ';const teaching=teacherLoadRows();
+ const totals=teaching.reduce((o,r)=>{o.planned+=r.planned;o.scheduled+=r.scheduled;o.remaining+=r.remaining;return o},{planned:0,scheduled:0,remaining:0});
+ const lines=teaching.map(t=>`<tr><td>${t.index}</td><td>${escapeHTML(t.name)}</td><td>${t.subjects}</td><td>${t.classes}</td><td><b>${t.planned}</b></td><td><b>${t.scheduled}</b></td><td>${t.remaining}</td><td>${t.status==='ครบ'?'ครบ':'<span style=\"color:#aa2c39\">'+escapeHTML(t.status)+'</span>'}</td></tr>`);
+ lines.push(`<tr class=\"summary-grand-total\"><td colspan=\"4\">รวมภาระสอนของครูทั้งหมด (รวมภาระของครูร่วมสอน)</td><td>${totals.planned}</td><td>${totals.scheduled}</td><td>${totals.remaining}</td><td>—</td></tr>`);
+ $('summaryTable').innerHTML=table(['ที่','ชื่อ–สกุลครู','จำนวนวิชา','จำนวนห้อง','ภาระสอน (ชม./สัปดาห์)','จัดลงตารางแล้ว (ชม./สัปดาห์)','ยังไม่จัด (ชม./สัปดาห์)','สถานะ'],lines)}
+function checkPlacement(a,day,period,slots,ignore=null){if(db.blocks.some(b=>assignmentTeachers(a).includes(b.teacherId)&&b.day===day&&b.period===period))return 'เป็นเวลาที่ครูไม่สะดวกสอน';for(let s of slots){if(s===ignore)continue;if(s.day!==day||s.period!==period)continue;if(s.classId===a.classId)return 'ห้องเรียนมีวิชาอยู่แล้ว';let other=db.assignments.find(x=>x.id===s.assignmentId);if(other&&assignmentTeachers(other).some(id=>assignmentTeachers(a).includes(id)))return 'ครูมีคาบสอนอยู่แล้ว'}return ''}
+function generate(){if(!db.classes.length||!db.teachers.length||!db.assignments.length){setStatus('โปรดเพิ่มครู ห้องเรียน และภาระสอนก่อน','error');return}let max=5*db.periods,errors=[];for(let a of db.assignments)if(!db.classes.some(c=>c.id===a.classId)||!assignmentTeachers(a).every(id=>db.teachers.some(t=>t.id===id))||!db.subjects.some(s=>s.id===a.subjectId))errors.push('พบภาระสอนที่อ้างอิงข้อมูลที่ถูกลบ');for(let c of db.classes){let x=db.assignments.filter(a=>a.classId===c.id).reduce((s,a)=>s+a.hours,0);if(x>max)errors.push(`${c.name} ต้องใช้ ${x} คาบ แต่มี ${max}`)}for(let t of db.teachers){let x=db.assignments.filter(a=>teaches(a,t.id)).reduce((s,a)=>s+a.hours,0);let avail=max-db.blocks.filter(b=>b.teacherId===t.id).length;if(x>avail)errors.push(`${t.name} รับ ${x} คาบ แต่มีช่วงว่างเพียง ${avail}`)}if(errors.length){setStatus(errors.join('\n'),'error');return}
+// Locked scheduled placements are preserved while free cells are rebuilt.
+let fixed=db.slots.filter(s=>db.locks.includes(lockKey(s.classId,s.day,s.period))&&db.assignments.some(a=>a.id===s.assignmentId));let best=null,bestCount=-1;
+for(let attempt=0;attempt<140;attempt++){let slots=fixed.map(x=>({...x}));let remaining=[];for(let a of db.assignments){let count=a.hours-slots.filter(s=>s.assignmentId===a.id).length;if(count<0){setStatus('คาบที่ล็อกมีจำนวนเกินภาระสอน กรุณาปลดล็อก','error');return}for(let i=0;i<count;i++)remaining.push(a)}let countDaily=(a,d)=>slots.filter(s=>s.day===d&&s.assignmentId===a.id).length;
+while(remaining.length){let ranked=remaining.map((a,index)=>{let valid=[];for(let d=0;d<5;d++)for(let p=0;p<db.periods;p++)if(!checkPlacement(a,d,p,slots))valid.push([d,p]);return {a,index,valid,pressure:db.assignments.filter(x=>assignmentTeachers(x).some(id=>assignmentTeachers(a).includes(id))).reduce((s,x)=>s+x.hours,0)}}).sort((x,y)=>x.valid.length-y.valid.length||y.pressure-x.pressure);let pick=ranked[0];if(!pick.valid.length)break;let options=pick.valid.map(([d,p])=>{let sameDay=countDaily(pick.a,d),subjectDay=slots.filter(s=>s.day===d&&s.classId===pick.a.classId&&db.assignments.find(a=>a.id===s.assignmentId)?.subjectId===pick.a.subjectId).length;let sameClassDay=slots.filter(s=>s.day===d&&s.classId===pick.a.classId).length;return {d,p,score:sameDay*8+subjectDay*5+sameClassDay*.12+Math.random()*4}}).sort((x,y)=>x.score-y.score);let choice=options[0];slots.push({id:uid(),classId:pick.a.classId,assignmentId:pick.a.id,day:choice.d,period:choice.p});remaining.splice(pick.index,1)}if(slots.length>bestCount){bestCount=slots.length;best=slots}if(slots.length===db.assignments.reduce((n,a)=>n+a.hours,0))break}
+if(bestCount<fixed.length){setStatus('คาบที่ล็อกขัดแย้งกับข้อจำกัดปัจจุบัน','error');return}db.slots=best||[];save();render();let v=validation();setStatus(v.issues.length?`จัดได้ ${v.assigned}/${v.totalNeed} คาบ บางคาบยังจัดไม่ได้ กรุณาปรับข้อจำกัดหรือภาระสอน แล้วจัดใหม่\n${v.issues.slice(0,6).join('\n')}`:`จัดตารางสำเร็จครบ ${v.totalNeed} คาบ โดยไม่พบคาบชน`,v.issues.length?'error':'ok')}
+function setStatus(message,type=''){let s=$('scheduleStatus');s.className='status '+type;s.textContent=message}
+function openCell(day,period,classId){if(!classId){setStatus('หากต้องการเพิ่มคาบจากมุมมองครู กรุณาเปลี่ยนไปที่ “ตารางเรียนรายห้อง”','error');return}let current=getSlot(classId,day,period);editing={classId,day,period,current};$('editTitle').textContent=`วัน${DAYS[day]} คาบ ${period+1}`;$('editDesc').textContent=`ห้อง ${nameOf('classes',classId)} — ${current?'คาบปัจจุบัน: '+assignmentLabel(db.assignments.find(a=>a.id===current.assignmentId)):'คาบว่าง'}`;$('editAssignment').innerHTML='<option value="">— ว่าง / ลบคาบ —</option>'+db.assignments.filter(a=>a.classId===classId).map(a=>`<option value="${a.id}" ${a.id===current?.assignmentId?'selected':''}>${escapeHTML(assignmentLabel(a))} (${usedHours(a.id)}/${a.hours})</option>`).join('');$('toggleLock').textContent=db.locks.includes(lockKey(classId,day,period))?'ปลดล็อกคาบ':'ล็อกคาบ';$('cellMessage').classList.add('hide');$('editDialog').showModal()}
+function saveCell(){if(!editing)return;let {classId,day,period,current}=editing,id=$('editAssignment').value,a=db.assignments.find(a=>a.id===id);if(id&&!a)return;if(a){let failure=checkPlacement(a,day,period,db.slots,current);if(failure)return cellError(failure);let currentCount=usedHours(a.id)-(current?.assignmentId===a.id?1:0);if(currentCount>=a.hours)return cellError('จำนวนคาบของภาระสอนนี้ครบแล้ว หากต้องการย้ายคาบ ให้ลบคาบเดิมก่อน');}db.slots=db.slots.filter(s=>s!==current);if(a)db.slots.push({id:uid(),classId,day,period,assignmentId:a.id});if(!a)db.locks=db.locks.filter(k=>k!==lockKey(classId,day,period));save();render();$('editDialog').close();setStatus('บันทึกการแก้ไขคาบแล้ว','ok')}
+function cellError(msg){$('cellMessage').className='status error';$('cellMessage').textContent=msg}
+function download(name,content,mime){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type:mime}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
+function exportCSV(mode){let header=['วัน','คาบ','ห้องเรียน','รหัสวิชา','รายวิชา','ครูผู้สอนร่วม'];let rows=db.slots.map(s=>{let a=db.assignments.find(x=>x.id===s.assignmentId),sub=db.subjects.find(x=>x.id===a?.subjectId);return [DAYS[s.day],s.period+1,nameOf('classes',s.classId),sub?.code||'',sub?.name||'',teacherLabel(a)]}).sort((a,b)=>a[2].localeCompare(b[2],'th')||DAYS.indexOf(a[0])-DAYS.indexOf(b[0])||a[1]-b[1]);if(mode==='teacher')rows.sort((a,b)=>a[5].localeCompare(b[5],'th')||DAYS.indexOf(a[0])-DAYS.indexOf(b[0])||a[1]-b[1]);let csv='\ufeff'+[header,...rows].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');download(mode==='teacher'?'ตารางสอนรายครู.csv':'ตารางเรียนรายห้อง.csv',csv,'text/csv;charset=utf-8')}
+function backup(){download('ข้อมูลสำรองตารางสอน.json',JSON.stringify(db,null,2),'application/json;charset=utf-8')}
+function cleanup(){let classes=new Set(db.classes.map(x=>x.id)),teachers=new Set(db.teachers.map(x=>x.id)),subjects=new Set(db.subjects.map(x=>x.id));db.assignments=db.assignments.filter(a=>classes.has(a.classId)&&teachers.has(a.teacherId)&&subjects.has(a.subjectId));db.assignments.forEach(a=>{if(a.teacher2Id&&!teachers.has(a.teacher2Id))a.teacher2Id='';if(a.teacher3Id&&!teachers.has(a.teacher3Id))a.teacher3Id=''});let assignments=new Set(db.assignments.map(x=>x.id));db.slots=db.slots.filter(s=>classes.has(s.classId)&&assignments.has(s.assignmentId)&&s.day>=0&&s.day<5&&s.period>=0&&s.period<db.periods);db.blocks=db.blocks.filter(b=>teachers.has(b.teacherId)&&b.day>=0&&b.day<5&&b.period>=0&&b.period<db.periods);let validLocks=new Set(db.slots.map(s=>lockKey(s.classId,s.day,s.period)));db.locks=db.locks.filter(k=>validLocks.has(k))}
+function addForm(formId,kind,fields){$(formId).addEventListener('submit',e=>{e.preventDefault();let obj={id:uid()};for(let [key,input] of Object.entries(fields)){let v=$(input).value.trim();if(!v)return alert('กรุณากรอกข้อมูลให้ครบ');obj[key]=v}if(kind==='assignments'){obj.hours=Number(obj.hours);if(!Number.isInteger(obj.hours)||obj.hours<1||obj.hours>60)return alert('จำนวนคาบต้องเป็นเลขจำนวนเต็ม 1–60');if(db.assignments.some(a=>a.classId===obj.classId&&a.subjectId===obj.subjectId&&a.teacherId===obj.teacherId))return alert('มีภาระสอนรายการนี้แล้ว')}db[kind].push(obj);save();render();$(formId).reset()})}
+load();
+addForm('teacherForm','teachers',{name:'teacherName'});addForm('classForm','classes',{name:'className'});addForm('subjectForm','subjects',{code:'subjectCode',name:'subjectName'});
+// Subject code is optional, so use a specialized submit handler instead.
+$('subjectForm').onsubmit=null;$('subjectForm').replaceWith($('subjectForm').cloneNode(true));$('subjectForm').addEventListener('submit',e=>{e.preventDefault();let name=$('subjectName').value.trim(),code=$('subjectCode').value.trim();if(!name)return;if(db.subjects.some(s=>bulkKey(s.name)===bulkKey(name)))return alert('มีชื่อรายวิชานี้อยู่แล้ว โปรดเลือกใช้รายการเดิม');db.subjects.push({id:uid(),code,name});save();render();$('subjectForm').reset()});
+$('assignmentForm').addEventListener('submit',e=>{e.preventDefault();let classId=$('aClass').value,subjectId=$('aSubject').value,teacherId=$('aTeacher').value,teacher2Id=$('aTeacher2').value,teacher3Id=$('aTeacher3').value,hours=Number($('aHours').value);if(!classId||!subjectId||!teacherId||!Number.isInteger(hours)||hours<1||hours>60)return alert('กรอกภาระสอนให้ครบ');if(new Set([teacherId,teacher2Id,teacher3Id].filter(Boolean)).size!==[teacherId,teacher2Id,teacher3Id].filter(Boolean).length)return alert('ครูผู้สอนทั้ง 3 ช่องต้องไม่ซ้ำกัน');if(db.assignments.some(a=>a.classId===classId&&a.subjectId===subjectId))return alert('ห้องเรียนและวิชานี้มีภาระสอนแล้ว โปรดลบหรือแก้ไขรายการเดิมก่อน');db.assignments.push({id:uid(),classId,subjectId,teacherId,teacher2Id,teacher3Id,hours});save();render()});
+document.addEventListener('change',e=>{let t=e.target;if(t.matches('[data-kind]')){let obj=db[t.dataset.kind].find(x=>x.id===t.dataset.id);if(obj){let val=t.value.trim();if(!val&&t.dataset.key!=='code'){alert('ข้อมูลนี้ต้องไม่ว่าง');render();return}obj[t.dataset.key]=val;save();render()}}if(t.matches('[data-hours]')){let a=db.assignments.find(x=>x.id===t.dataset.hours),v=Number(t.value);if(a&&Number.isInteger(v)&&v>=1&&v<=60){a.hours=v;save();render()}else{alert('คาบต้องเป็นจำนวนเต็ม 1–60');render()}}});
+document.addEventListener('click',e=>{let b=e.target.closest('[data-remove]');if(b){let kind=b.dataset.remove,id=b.dataset.id;if(!confirm('ยืนยันลบรายการนี้? รายการภาระสอนและคาบที่เกี่ยวข้องอาจถูกลบด้วย'))return;db[kind]=db[kind].filter(x=>x.id!==id);cleanup();save();render()}let cell=e.target.closest('[data-cell]');if(cell)openCell(Number(cell.dataset.day),Number(cell.dataset.period),cell.dataset.class)});
+$('enableSubjectColors').addEventListener('change',e=>{db.colorizeSchedules=!!e.target.checked;save();renderGrid();renderSubjectColorEditor()});
+$('subjectColorList').addEventListener('change',e=>{
+ const pick=e.target.closest('[data-color-key]');if(!pick)return;
+ const color=validColor(pick.value);if(!color)return;
+ db.subjectColors=db.subjectColors||{};db.subjectColors[pick.dataset.colorKey]=color;
+ save();renderGrid();renderSubjectColorEditor();
+});
+$('resetSubjectColors').onclick=()=>{
+ if(!confirm('ยืนยันคืนค่าสีรายวิชาทั้งหมดเป็นชุดสีแนะนำ?'))return;
+ db.subjectColors={};db.colorizeSchedules=true;save();renderGrid();renderSubjectColorEditor();
+};
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');render()});
+$('saveSettings').onclick=()=>{let p=Number($('periods').value),y=Number($('year').value);if(!Number.isInteger(p)||p<1||p>12||!Number.isInteger(y)||y<2500||y>2700)return alert('กรุณาตรวจสอบจำนวนคาบและปีการศึกษา');db.school=$('school').value.trim();db.semester=$('semester').value;db.year=y;db.periods=p;cleanup();save();render();alert('บันทึกการตั้งค่าแล้ว')};
+$('addBlock').onclick=()=>{let teacherId=$('blockTeacher').value,day=Number($('blockDay').value),period=Number($('blockPeriod').value);if(!teacherId)return alert('กรุณาเลือกครู');if(db.blocks.some(b=>b.teacherId===teacherId&&b.day===day&&b.period===period))return alert('มีเวลาห้ามสอนนี้แล้ว');db.blocks.push({id:uid(),teacherId,day,period});save();render()};
+$('viewMode').onchange=()=>{renderTarget();renderGrid()};$('viewTarget').onchange=renderGrid;$('generate').onclick=generate;$('clearSchedule').onclick=()=>{if(confirm('ล้างตารางทั้งหมด รวมคาบที่ล็อก?')){db.slots=[];db.locks=[];save();render();setStatus('ล้างตารางแล้ว')}};$('validateNow').onclick=()=>{let v=validation();setStatus(v.issues.length?v.issues.join('\n'):'ตรวจสอบแล้ว ไม่พบข้อผิดพลาด',v.issues.length?'error':'ok')};$('saveCell').onclick=saveCell;$('cancelCell').onclick=()=>$('editDialog').close();$('toggleLock').onclick=()=>{if(!editing?.current)return cellError('ต้องมีวิชาอยู่ในคาบก่อนจึงจะล็อกได้');let k=lockKey(editing.classId,editing.day,editing.period);db.locks=db.locks.includes(k)?db.locks.filter(x=>x!==k):[...db.locks,k];save();render();$('editDialog').close()};$('exportCSV').onclick=()=>exportCSV('class');$('exportTeacherCSV').onclick=()=>exportCSV('teacher');$('backup').onclick=backup;$('backup2').onclick=backup;$('restoreButton').onclick=()=>$('restoreFile').click();$('restoreFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{let d=JSON.parse(await file.text());if(!d||!Array.isArray(d.teachers)||!Array.isArray(d.classes)||!Array.isArray(d.subjects)||!Array.isArray(d.assignments)||!Array.isArray(d.slots))throw Error('รูปแบบข้อมูลไม่ถูกต้อง');if(!confirm('นำเข้าข้อมูลนี้ทับข้อมูลปัจจุบัน?'))return;db={...initial(),...d};if(!Number.isInteger(Number(db.periods))||db.periods<1||db.periods>12)throw Error('จำนวนคาบไม่ถูกต้อง');cleanup();save();render();alert('นำเข้าข้อมูลเรียบร้อย')}catch(err){alert('นำเข้าไม่สำเร็จ: '+err.message)}e.target.value=''};
+$('reset').onclick=()=>{if(confirm('ลบข้อมูลทั้งหมดออกจากเบราว์เซอร์เครื่องนี้? โปรดสำรอง JSON ก่อน')){db=initial();save();render()}};
+$('demo').onclick=()=>{if(!confirm('โหลดข้อมูลตัวอย่าง โดยแทนที่ข้อมูลปัจจุบัน?'))return;db=initial();db.school='โรงเรียนตัวอย่าง (ข้อมูลสาธิต)';db.teachers=['ครู ก','ครู ข','ครู ค'].map(name=>({id:uid(),name}));db.classes=['ป.6','ม.1','ม.2'].map(name=>({id:uid(),name}));db.subjects=[['ว21102','วิทยาศาสตร์'],['ค21102','คณิตศาสตร์'],['ท21102','ภาษาไทย']].map(([code,name])=>({id:uid(),code,name}));for(let c of db.classes)for(let i=0;i<3;i++)db.assignments.push({id:uid(),classId:c.id,subjectId:db.subjects[i].id,teacherId:db.teachers[i].id,hours:3});save();render();alert('โหลดข้อมูลสาธิตแล้ว (ไม่ใช่ข้อมูลจริงของสถานศึกษา)')};
+
+
+// Bulk import: pasted Excel tabs or UTF-8 CSV, validated before non-destructive commit.
+const BULK_HEADERS={teachers:['ชื่อครู'],classes:['ห้องเรียน'],subjects:['รหัสวิชา','รายวิชา'],assignments:['ห้องเรียน','รหัสวิชา','รายวิชา','ชื่อครู 1','ชื่อครู 2','ชื่อครู 3','คาบต่อสัปดาห์']};
+function bulkKey(x){return String(x??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th')}
+function bulkCsvRows(src){const out=[];let row=[],field='',quote=false;src=String(src).replace(/^\uFEFF/,'');for(let i=0;i<src.length;i++){let c=src[i];if(quote){if(c==='"'&&src[i+1]==='"'){field+='"';i++}else if(c==='"')quote=false;else field+=c}else if(c==='"')quote=true;else if(c==='\t'||c===','){row.push(field);field=''}else if(c==='\r'||c==='\n'){if(c==='\r'&&src[i+1]==='\n')i++;row.push(field);if(row.some(v=>v.trim()))out.push(row);row=[];field=''}else field+=c}if(quote)throw Error('เครื่องหมายอัญประกาศใน CSV ไม่ครบ');row.push(field);if(row.some(v=>v.trim()))out.push(row);return out}
+function bulkColumn(header,words){return header.findIndex(h=>words.some(w=>bulkKey(h)===bulkKey(w)))}
+function bulkParse(){
+ const kind=$('bulkKind').value,rows=bulkCsvRows($('bulkInput').value);
+ if(!rows.length)throw Error('ยังไม่มีข้อมูลสำหรับนำเข้า');
+ if(rows.length>10000)throw Error('เกิน 10,000 แถว');
+ const synonyms={room:['ห้องเรียน','ห้อง','ชั้นเรียน','class'],code:['รหัสวิชา','รหัส','code'],subject:['รายวิชา','ชื่อรายวิชา','ชื่อวิชา','วิชา','subject'],teacher:['ชื่อครู 1','ชื่อครู1','ครู 1','ชื่อครู','ครูผู้สอน','ครู','teacher'],hours:['คาบต่อสัปดาห์','คาบ/สัปดาห์','จำนวนคาบ','ชั่วโมงต่อสัปดาห์','ชั่วโมง','hours']};
+ const required=kind==='assignments'?['room','subject','teacher','hours']:kind==='subjects'?['subject']:kind==='classes'?['room']:['teacher'];
+ const head=rows[0],idx={};for(const k of Object.keys(synonyms))idx[k]=bulkColumn(head,synonyms[k]);
+ const headerPresent=required.every(k=>idx[k]>=0);
+ if(!headerPresent){let keys=kind==='assignments'?['room','code','subject','teacher']:kind==='subjects'?['code','subject']:kind==='classes'?['room']:['teacher'];keys.forEach((k,i)=>idx[k]=i);if(kind==='assignments')idx.hours=-1;}
+ const data=headerPresent?rows.slice(1):rows,parsed=[],errors=[],warnings=[];
+ data.forEach((raw,i)=>{
+  const row=raw.map(v=>String(v??'').trim()),n=i+(headerPresent?2:1);
+  const v=k=>idx[k]>=0?row[idx[k]]||'':'';
+  const x={room:v('room'),code:v('code'),subject:v('subject'),teacher:v('teacher'),hours:v('hours'),teachers:[]};
+  if(kind==='assignments'){
+   const end=headerPresent?idx.hours:row.length-1;
+   if(end<=3||end>25||row.length<5){errors.push('แถว '+n+': จำนวนคอลัมน์ไม่ถูกต้อง');return;}
+   if(!headerPresent)x.hours=row[end];
+   const rawNames=row.slice(3,end).filter(Boolean),seen=new Set();
+   for(const name of rawNames){let key=bulkKey(name);if(seen.has(key)){warnings.push('แถว '+n+': ตัดชื่อครูที่ระบุซ้ำ "'+name+'"');continue;}seen.add(key);x.teachers.push(name);}
+   x.teacher=x.teachers[0]||'';x.teacher2=x.teachers[1]||'';x.teacher3=x.teachers[2]||'';
+   if(!x.room||!x.subject||!x.teachers.length){errors.push('แถว '+n+': ห้องเรียน/รายวิชา/ครูผู้สอนไม่ครบ');return;}
+   if(!/^\d+$/.test(x.hours)||Number(x.hours)<1||Number(x.hours)>60){errors.push('แถว '+n+': คาบต่อสัปดาห์ไม่ถูกต้อง');return;}
+  }else if(required.some(k=>!v(k))){errors.push('แถว '+n+': ข้อมูลจำเป็นไม่ครบ');return;}
+  parsed.push(x);
+ });
+ return {kind,parsed,errors,headerPresent,warnings};
+}
+
+function bulkApply(parsed,kind){
+ const copy=JSON.parse(JSON.stringify(db)),added={teachers:0,classes:0,subjects:0,assignments:0},skipped=[],updated=[];
+ const findNamed=(type,name)=>copy[type].find(v=>bulkKey(v.name)===bulkKey(name));
+ const getName=(type,name)=>{let v=findNamed(type,name);if(!v){v={id:uid(),name};copy[type].push(v);added[type]++}return v};
+ const getSubject=(code,name)=>{let v=copy.subjects.find(x=>bulkKey(x.name)===bulkKey(name));if(v){if(!v.code&&code)v.code=code;return v}v={id:uid(),code,name};copy.subjects.push(v);added.subjects++;return v};
+ for(let i=0;i<parsed.length;i++){
+  const x=parsed[i];
+  if(kind==='teachers'){if(findNamed('teachers',x.teacher))skipped.push(i+1);else getName('teachers',x.teacher)}
+  if(kind==='classes'){if(findNamed('classes',x.room))skipped.push(i+1);else getName('classes',x.room)}
+  if(kind==='subjects'){let n=copy.subjects.length;getSubject(x.code,x.subject);if(copy.subjects.length===n)skipped.push(i+1)}
+  if(kind==='assignments'){
+   let c=getName('classes',x.room),sub=getSubject(x.code,x.subject);
+   let ids=(x.teachers||[x.teacher,x.teacher2,x.teacher3].filter(Boolean)).map(n=>getName('teachers',n).id);
+   let a=copy.assignments.find(a=>a.classId===c.id&&a.subjectId===sub.id);
+   if(a){let oldIds=Array.isArray(a.teacherIds)&&a.teacherIds.length?a.teacherIds:[a.teacherId,a.teacher2Id,a.teacher3Id].filter(Boolean);
+    if(a.hours!==Number(x.hours)||oldIds.length!==ids.length||oldIds.some(id=>!ids.includes(id)))throw Error('ภาระสอนเดิมไม่ตรงกับไฟล์: '+x.room+' / '+x.subject+' — กรุณาสำรองข้อมูลและตรวจสอบรายการเดิม');
+    skipped.push(i+1);
+   }else{copy.assignments.push({id:uid(),classId:c.id,subjectId:sub.id,teacherId:ids[0],teacher2Id:ids[1]||'',teacher3Id:ids[2]||'',teacherIds:ids,hours:Number(x.hours)});added.assignments++}
+  }
+ }
+ return {copy,added,skipped,updated};
+}
+
+function bulkRun(commit){try{const {kind,parsed,errors,warnings}=bulkParse();if(errors.length){$('bulkStatus').className='status error';$('bulkStatus').textContent='ยังไม่นำเข้า: '+errors.slice(0,12).join('\n')+(errors.length>12?'\nและอีก '+(errors.length-12)+' รายการ':'');return}const result=bulkApply(parsed,kind),msg=`ตรวจสอบ ${parsed.length} แถว | ปรับชื่อครูซ้ำ ${warnings.length} จุด | เพิ่มครู ${result.added.teachers} ห้องเรียน ${result.added.classes} วิชา ${result.added.subjects} ภาระสอน ${result.added.assignments} | ซ้ำและข้าม ${result.skipped.length} แถว`;if(commit){if(!confirm(msg+'\nยืนยันนำเข้าข้อมูล โดยไม่ลบข้อมูลเดิม?'))return;db=result.copy;save();render();$('bulkStatus').className='status ok';$('bulkStatus').textContent='นำเข้าสำเร็จ: '+msg}else{$('bulkStatus').className='status ok';$('bulkStatus').textContent='ตัวอย่างก่อนนำเข้า: '+msg}const columns=BULK_HEADERS[kind];$('bulkPreviewTable').innerHTML=table(columns,parsed.slice(0,15).map(x=>`<tr>${(kind==='assignments'?[x.room,x.code,x.subject,x.teacher,x.teacher2,x.teacher3,x.hours]:kind==='subjects'?[x.code,x.subject]:kind==='classes'?[x.room]:[x.teacher]).map(v=>`<td>${escapeHTML(v)}</td>`).join('')}</tr>`));if(parsed.length>15)$('bulkStatus').textContent+='\nแสดงตัวอย่าง 15 แถวแรก'}catch(e){$('bulkStatus').className='status error';$('bulkStatus').textContent='ไม่สามารถนำเข้า: '+e.message}}
+function bulkUpdateFormat(){let kind=$('bulkKind').value;$('bulkFormat').textContent='รูปแบบคอลัมน์: '+BULK_HEADERS[kind].join(' | ')+' (ชื่อครู 2 เป็นต้นไปเว้นว่างได้ และเพิ่มคอลัมน์ชื่อครู 4 เป็นต้นไปได้; รองรับการวางจาก Excel)' ;$('bulkPreviewTable').innerHTML=''}
+$('bulkKind').onchange=bulkUpdateFormat;bulkUpdateFormat();
+$('bulkPreview').onclick=()=>bulkRun(false);$('bulkImport').onclick=()=>bulkRun(true);
+$('bulkClear').onclick=()=>{$('bulkInput').value='';$('bulkFile').value='';$('bulkPreviewTable').innerHTML='';$('bulkStatus').textContent='ล้างข้อมูลในช่องนำเข้าแล้ว (ข้อมูลที่เคยบันทึกยังอยู่)'};
+$('bulkFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;if(f.size>2000000)return alert('โปรดใช้ไฟล์ CSV ขนาดไม่เกิน 2 MB');$('bulkInput').value=await f.text();bulkRun(false)};
+$('assignCsvImport').onclick=async()=>{const f=$('assignCsvFile').files[0],status=$('assignCsvStatus');if(!f){status.className='status error';status.textContent='โปรดเลือกไฟล์ CSV ก่อน';return}if(f.size>2000000){status.className='status error';status.textContent='ไฟล์ใหญ่เกิน 2 MB';return}try{$('bulkKind').value='assignments';bulkUpdateFormat();$('bulkInput').value=await f.text();const {parsed,errors,warnings}=bulkParse();if(errors.length)throw Error(errors.slice(0,15).join('\n')+(errors.length>15?'\nและอีก '+(errors.length-15)+' รายการ':''));const result=bulkApply(parsed,'assignments');const message=`ตรวจพบ ${parsed.length} รายการ (ปรับชื่อครูซ้ำ ${warnings.length} จุด)\nจะเพิ่มภาระสอน ${result.added.assignments} รายการ ครู ${result.added.teachers} คน ห้องเรียน ${result.added.classes} ห้อง รายวิชา ${result.added.subjects} ชื่อ\nรายการที่มีอยู่แล้วและตรงกัน ${result.skipped.length} รายการ`;if(!confirm(message+'\n\nยืนยันนำเข้าข้อมูลหรือไม่?')){status.className='status';status.textContent='ตรวจสอบแล้ว ยังไม่ได้บันทึก: '+message;return}db=result.copy;save();render();status.className='status ok';status.textContent='นำเข้าสำเร็จ: '+message+'\nข้อมูลปรากฏในตารางภาระสอนด้านล่างแล้ว';if($('assignCount'))$('assignCount').textContent=db.assignments.length;}catch(e){status.className='status error';status.textContent='นำเข้าไม่ได้: '+e.message+'\nหากเป็นข้อมูลเดิมที่ไม่ตรงกัน โปรดสำรอง JSON และตรวจสอบรายการเดิมก่อน';}};
+
+$('bulkTemplate').onclick=()=>{let kind=$('bulkKind').value,h=BULK_HEADERS[kind];let examples={teachers:[['ครู ตัวอย่าง ก'],['ครู ตัวอย่าง ข'],['ครู ตัวอย่าง ค']],classes:[['ป.1'],['ม.1/1']],subjects:[['ว21102','วิทยาศาสตร์'],['ง23202','อาหารไทย']],assignments:[['ม.1/1','ว21102','วิทยาศาสตร์','ครู ตัวอย่าง ก','ครู ตัวอย่าง ข','ครู ตัวอย่าง ค','3'],['ม.1/1','ท21102','ภาษาไทย','ครู ตัวอย่าง ข','','','3']]};download('แม่แบบ_'+kind+'.csv','\ufeff'+[h,...examples[kind]].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8')};
+
+// ---- Integrated daily substitute-teaching module (no external dependencies) ----
+const subOriginalRender = render;
+let subPrepared = false;
+const subWeekday = dateStr => {const [y,m,d]=dateStr.split('-').map(Number);if(!y||!m||!d)return -1;const date=new Date(y,m-1,d);if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)return -1;return (date.getDay()+6)%7};
+function subRecords(){if(!Array.isArray(db.substitutions))db.substitutions=[];return db.substitutions}
+function subSafe(){const today=new Date();return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`}
+function subSetStatus(message,error=false){$('subStatus').textContent=message;$('subStatus').className='status '+(error?'error':'ok')}
+function subWorkload(tid){return subRecords().filter(x=>x.subTeacherId===tid).length}
+function subRequirements(date,tid){const day=subWeekday(date);if(day<0||day>4)return [];return db.slots.filter(s=>s.day===day&&db.assignments.some(a=>a.id===s.assignmentId&&teaches(a,tid))).sort((a,b)=>a.period-b.period||nameOf('classes',a.classId).localeCompare(nameOf('classes',b.classId),'th'))}
+function subCandidates(date,slot,absentId){const day=subWeekday(date);const absentSet=new Set([...(db.absences||[]).filter(x=>x.date===date).map(x=>x.teacherId),...subRecords().filter(x=>x.date===date).map(x=>x.absentTeacherId)]);absentSet.add(absentId);return db.teachers.filter(t=>!absentSet.has(t.id)&&!db.slots.some(s=>s.day===day&&s.period===slot.period&&db.assignments.some(a=>a.id===s.assignmentId&&teaches(a,t.id)))&&!subRecords().some(r=>r.date===date&&r.period===slot.period&&r.subTeacherId===t.id&&r.slotId!==slot.id)&&!db.blocks.some(b=>b.teacherId===t.id&&b.day===day&&b.period===slot.period)).sort((a,b)=>subWorkload(a.id)-subWorkload(b.id)||a.name.localeCompare(b.name,'th'))}
+function subCleanup(){db.absences=(db.absences||[]).filter(x=>db.teachers.some(t=>t.id===x.teacherId));const slotSet=new Set(db.slots.map(s=>s.id));const teachers=new Set(db.teachers.map(t=>t.id));db.substitutions=subRecords().filter(r=>slotSet.has(r.slotId)&&teachers.has(r.absentTeacherId)&&teachers.has(r.subTeacherId)&&subWeekday(r.date)===db.slots.find(s=>s.id===r.slotId)?.day)}
+function subRender(){if(!$('substitution'))return;const t=$('subAbsent'),was=t.value;t.innerHTML='<option value="">-- เลือกครู --</option>'+selectHTML(db.teachers,was);if(was&&db.teachers.some(x=>x.id===was))t.value=was;const date=$('subDate').value,tid=t.value;const valid=!!date&&!!tid&&subWeekday(date)<5&&subWeekday(date)>=0;
+$('subPrintTitle').textContent=`ตารางสอนแทน ${db.school||'สถานศึกษา'} วันที่ ${date||'—'}${tid?' • '+nameOf('teachers',tid):''}`;
+let slots=valid?subRequirements(date,tid):[];
+const rows=slots.map(s=>{const a=db.assignments.find(x=>x.id===s.assignmentId),rec=subRecords().find(x=>x.date===date&&x.slotId===s.id);const choices=subCandidates(date,s,tid);if(rec&&!choices.some(t=>t.id===rec.subTeacherId))choices.unshift(db.teachers.find(t=>t.id===rec.subTeacherId)||{id:rec.subTeacherId,name:'ไม่พบชื่อครู'});
+const opts='<option value="">-- ยังไม่จัด --</option>'+choices.map((t,i)=>`<option value="${escapeHTML(t.id)}" ${rec?.subTeacherId===t.id?'selected':''}>${escapeHTML(t.name)} (${subWorkload(t.id)} คาบ)${!rec&&i===0?' ★ แนะนำ':''}</option>`).join('');return `<tr><td>${s.period+1}</td><td>${escapeHTML(nameOf('classes',s.classId))}</td><td>${escapeHTML(subjectLabel(a?.subjectId))}</td><td>${escapeHTML(nameOf('teachers',tid))}</td><td><select data-sub-pick="${escapeHTML(s.id)}">${opts}</select><span class="printTeacher">${escapeHTML(nameOf('teachers',rec?.subTeacherId))}</span></td><td>${rec?'บันทึกแล้ว':'รอจัด'}</td><td class="noprint"><button class="mini" data-sub-save="${escapeHTML(s.id)}">บันทึก</button> ${rec?`<button class="mini warn" data-sub-remove="${escapeHTML(rec.id)}">ยกเลิก</button>`:''}</td></tr>`}).join('');$('subGrid').innerHTML=table(['คาบ','ห้อง','รายวิชา','ครูเดิม','ครูสอนแทน','สถานะ','จัดการ'],rows?[rows]:[]);
+const current=subRecords().slice().sort((a,b)=>b.date.localeCompare(a.date)||a.period-b.period);$('subHistory').innerHTML=table(['วันที่','คาบ','ห้อง','ครูเดิม','ครูสอนแทน','สาเหตุ','จัดการ'],current.map(r=>`<tr><td>${escapeHTML(r.date)}</td><td>${r.period+1}</td><td>${escapeHTML(nameOf('classes',r.classId))}</td><td>${escapeHTML(nameOf('teachers',r.absentTeacherId))}</td><td>${escapeHTML(nameOf('teachers',r.subTeacherId))}</td><td>${escapeHTML(r.reason)}</td><td><button class="mini warn" data-sub-remove="${escapeHTML(r.id)}">ลบ</button></td></tr>`));$('subTotals').innerHTML=table(['ครู','จำนวนคาบสอนแทนสะสม'],db.teachers.map(t=>`<tr><td>${escapeHTML(t.name)}</td><td>${subWorkload(t.id)}</td></tr>`));
+subFormalPreview();
+if(subPrepared)subSetStatus(valid?(slots.length?`พบ ${slots.length} คาบ • จัดแล้ว ${slots.filter(s=>subRecords().some(r=>r.date===date&&r.slotId===s.id)).length} คาบ • ยังไม่ได้จัด ${slots.filter(s=>!subRecords().some(r=>r.date===date&&r.slotId===s.id)).length} คาบ`:'ไม่พบคาบสอนตามตารางหลักสำหรับครูและวันที่เลือก'): 'เลือกวันที่จันทร์–ศุกร์และครูให้ถูกต้อง',!valid);
+}
+render = function(){subOriginalRender();subCleanup();subRender()};
+$('subDate').value=subSafe();
+function subMarkAbsent(){const date=$('subDate').value,teacherId=$('subAbsent').value;if(!teacherId||subWeekday(date)<0||subWeekday(date)>4)return false;if(!Array.isArray(db.absences))db.absences=[];if(!db.absences.some(x=>x.date===date&&x.teacherId===teacherId))db.absences.push({date,teacherId,reason:$('subReason').value});save();return true}
+$('subPrepare').onclick=()=>{subPrepared=true;if(!subMarkAbsent())return subSetStatus('เลือกวันที่จันทร์–ศุกร์และครูก่อน',true);subRender()};
+$('subDate').onchange=()=>{subPrepared=true;subRender()};$('subAbsent').onchange=()=>{subPrepared=true;subRender()};$('subReason').onchange=subRender;
+function subAssign(slotId,teacherId){subMarkAbsent();const date=$('subDate').value,absentId=$('subAbsent').value,slot=db.slots.find(s=>s.id===slotId);if(!slot||!subRequirements(date,absentId).some(s=>s.id===slotId))return 'ไม่พบคาบสอนที่ตรงกับข้อมูล';if(!subCandidates(date,slot,absentId).some(t=>t.id===teacherId))return 'ครูที่เลือกไม่ว่าง หรือมีการมอบหมายซ้อนในคาบนี้';const prev=subRecords().find(x=>x.date===date&&x.slotId===slotId);if(prev){prev.subTeacherId=teacherId;prev.reason=$('subReason').value}else db.substitutions.push({id:uid(),date,slotId,classId:slot.classId,period:slot.period,absentTeacherId:absentId,subTeacherId:teacherId,reason:$('subReason').value});return ''}
+$('subGrid').onclick=e=>{const saveBtn=e.target.closest('[data-sub-save]'),del=e.target.closest('[data-sub-remove]');if(saveBtn){const id=saveBtn.dataset.subSave,pick=[...$('subGrid').querySelectorAll('[data-sub-pick]')].find(el=>el.dataset.subPick===id);if(!pick?.value)return subSetStatus('โปรดเลือกครูผู้สอนแทนก่อนบันทึก',true);const err=subAssign(id,pick.value);if(err)return subSetStatus(err,true);save();subRender();subSetStatus('บันทึกการสอนแทนแล้ว')}if(del){db.substitutions=subRecords().filter(r=>r.id!==del.dataset.subRemove);save();subRender();subSetStatus('ยกเลิกการสอนแทนแล้ว')}};
+$('subHistory').onclick=e=>{let b=e.target.closest('[data-sub-remove]');if(!b||!confirm('ยืนยันลบรายการสอนแทนนี้?'))return;db.substitutions=subRecords().filter(r=>r.id!==b.dataset.subRemove);save();subRender()};
+$('subAuto').onclick=()=>{const date=$('subDate').value,tid=$('subAbsent').value;if(!subMarkAbsent())return subSetStatus('เลือกวันจันทร์–ศุกร์และครูก่อน',true);let done=0,failed=0;for(const slot of subRequirements(date,tid)){if(subRecords().some(r=>r.date===date&&r.slotId===slot.id))continue;let best=subCandidates(date,slot,tid)[0];if(best&&!subAssign(slot.id,best.id))done++;else failed++}save();subPrepared=true;subRender();subSetStatus(`จัดสอนแทนเพิ่ม ${done} คาบ${failed?' • ไม่มีครูว่าง '+failed+' คาบ':''}`,failed>0)};
+$('subPrint').onclick=()=>printFormalSubstitution();
+$('subCsv').onclick=()=>{const rows=[['วันที่','คาบ','ห้องเรียน','ครูเดิม','ครูสอนแทน','สาเหตุ'],...subRecords().map(r=>[r.date,r.period+1,nameOf('classes',r.classId),nameOf('teachers',r.absentTeacherId),nameOf('teachers',r.subTeacherId),r.reason])];download('ประวัติการสอนแทน.csv','\ufeff'+rows.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8')};
+
+
+// Export formatted cross-tab schedules: native offline XLSX (ZIP stored entries) and paginated PDF print view.
+function exportScheduleMatrix(kind,obj){
+ const cells=[['คาบ',...DAYS]];
+ for(let period=0;period<Number(db.periods);period++){
+  let row=[String(period+1)];
+  for(let d=0;d<5;d++){
+   let sl=db.slots.find(x=>x.day===d&&x.period===period&&(kind==='class'?x.classId===obj.id:db.assignments.some(a=>a.id===x.assignmentId&&teaches(a,obj.id))));
+   if(!sl){row.push('');continue}
+   let a=db.assignments.find(x=>x.id===sl.assignmentId),su=db.subjects.find(x=>x.id===a?.subjectId);
+   row.push([su?.name||'',su?.code||'',kind==='class'?teacherLabel(a):nameOf('classes',sl.classId)].filter(Boolean).join(' / '));
+  }cells.push(row);
+ }return cells;
+}
+function reportSheets(){
+ let sheets=[];
+ for(let c of db.classes)sheets.push({name:'ห้อง '+c.name,rows:exportScheduleMatrix('class',c),title:'ตารางเรียน '+c.name});
+ for(let t of db.teachers)sheets.push({name:'ครู '+t.name,rows:exportScheduleMatrix('teacher',t),title:'ตารางสอน '+t.name});
+ const history=[['วันที่','คาบ','ห้องเรียน','วิชา','ครูเดิม','ครูสอนแทน','สาเหตุ']];
+ for(let r of (db.substitutions||[])){
+  let sl=db.slots.find(s=>s.id===r.slotId),a=db.assignments.find(a=>a.id===sl?.assignmentId);
+  history.push([r.date||'',String((sl?.period??-1)+1),nameOf('classes',sl?.classId),a?subjectLabel(a.subjectId):'',teacherLabel(a),nameOf('teachers',r.subTeacherId),r.reason||'']);
+ }
+ sheets.push({name:'ประวัติสอนแทน',rows:history,title:'ประวัติการจัดสอนแทน'});
+ return sheets;
+}
+function xesc(v){return String(v??'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]))}
+function bytes(s){return new TextEncoder().encode(s)}
+function xlsxSheet(rows){
+ let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="26"/><cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="6" width="38" customWidth="1"/></cols><sheetData>';
+ rows.forEach((row,i)=>{xml+='<row r="'+(i+1)+'" ht="'+(i===0?30:44)+'" customHeight="1">';row.forEach((cell,j)=>{let col='';let n=j+1;while(n){n--;col=String.fromCharCode(65+n%26)+col;n=Math.floor(n/26)}xml+='<c r="'+col+(i+1)+'" t="inlineStr" s="'+(i===0?1:2)+'"><is><t xml:space="preserve">'+xesc(cell)+'</t></is></c>'});xml+='</row>'});
+ return xml+'</sheetData><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.15" footer="0.15"/><pageSetup orientation="landscape" paperSize="9" fitToWidth="1"/></worksheet>';
+}
+let crcTable=null;function crc32(data){if(!crcTable){crcTable=Array.from({length:256},(_,i)=>{let c=i;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0})}let c=0xffffffff;for(let b of data)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0}
+function zipStore(entries){let parts=[],cent=[],offset=0;const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+ for(let [path,str] of entries){let name=bytes(path),data=bytes(str),crc=crc32(data),lh=new Uint8Array([80,75,3,4,...u16(20),...u16(0x800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)]);parts.push(lh,name,data);
+ let ch=new Uint8Array([80,75,1,2,...u16(20),...u16(20),...u16(0x800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset)]);cent.push(ch,name);offset+=lh.length+name.length+data.length}
+ let clen=cent.reduce((s,a)=>s+a.length,0),end=new Uint8Array([80,75,5,6,...u16(0),...u16(0),...u16(entries.length),...u16(entries.length),...u32(clen),...u32(offset),...u16(0)]);return new Blob([...parts,...cent,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function exportStylesXML(){
+ const {font,size}=getOutputStyle();const palette=xlsxColorPalette();
+ const xlFont=(n,bold,white=false)=>'<font>'+(bold?'<b/>':'')+'<sz val="'+n+'"/><name val="'+xesc(font)+'"/><family val="2"/>'+(white?'<color rgb="FFFFFFFF"/>':'')+'</font>';
+ const colorFill=bg=>'<fill><patternFill patternType="solid"><fgColor rgb="FF'+bg.slice(1)+'"/><bgColor indexed="64"/></patternFill></fill>';
+ const normalAlign='<alignment horizontal="center" vertical="center" wrapText="1"/>';
+ const xf=(fontId,fillId=0,borderId=1,styleFill=false)=>'<xf numFmtId="0" fontId="'+fontId+'" fillId="'+fillId+'" borderId="'+borderId+'" xfId="0" applyFont="1"'+(styleFill?' applyFill="1"':'')+' applyAlignment="1">'+normalAlign+'</xf>';
+ return '<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+ '<fonts count="5">'+xlFont(size,false)+xlFont(size+4,true)+xlFont(size+1,true)+xlFont(size,false,true)+xlFont(size+1,true,true)+'</fonts>'+
+ '<fills count="'+(2+palette.length)+'"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+palette.map(colorFill).join('')+'</fills>'+
+ '<borders count="2"><border/><border><left style="thin"><color rgb="FF252525"/></left><right style="thin"><color rgb="FF252525"/></right><top style="thin"><color rgb="FF252525"/></top><bottom style="thin"><color rgb="FF252525"/></bottom></border></borders>'+
+ '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+ '<cellXfs count="'+(7+palette.length)+'">'+
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+xf(1,0,0)+xf(2)+xf(0)+xf(2)+
+ palette.map((c,i)=>xf(textOnColor(c)==='#FFFFFF'?3:0,2+i,1,true)).join('')+xf(2,0,0)+xf(0,0,0)+
+ '</cellXfs></styleSheet>';
+}
+
+function makeXLSX(customSheets=null,customFilename=''){let sheets=Array.isArray(customSheets)?customSheets:reportSheets();if(!customSheets&&!db.slots.length&&!((db.substitutions||[]).length))return alert('ยังไม่มีตารางหรือประวัติสอนแทนให้ส่งออก');
+ let seen=new Set();sheets=sheets.map((s,i)=>{let base=s.name.replace(/[\\\/\?\*\[\]:]/g,' ').slice(0,28)||('Sheet '+i),name=base,n=2;while(seen.has(name)){name=base.slice(0,25)+' '+n++}seen.add(name);return {...s,name}});
+ let entries=[['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>'],
+ ['_rels/.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+ ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheets.map((s,i)=>'<sheet name="'+xesc(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>'],
+ ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+ ['xl/styles.xml',exportStylesXML()]];
+ sheets.forEach((s,i)=>entries.push(['xl/worksheets/sheet'+(i+1)+'.xml',xlsxSheet(s.rows,s)]));let blob=zipStore(entries);let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=customFilename||('ตารางสอนและสอนแทน_'+db.semester+'_'+db.year+'.xlsx');a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)
+}
+function printReport(kind){
+ let data=kind==='sub'?[{title:'สรุปการจัดสอนแทน',rows:reportSheets().at(-1).rows}]:reportSheets().filter(s=>kind==='all'||(kind==='class'?s.title.startsWith('ตารางเรียน'):s.title.startsWith('ตารางสอน')));
+ if(!data.length||data.every(s=>s.rows.length<2))return alert('ยังไม่มีข้อมูลให้พิมพ์');
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-200vw;top:0;width:1px;height:1px';document.body.appendChild(frame);
+ const body=data.map(s=>'<section class="page"><h2>'+escapeHTML(db.school||'สถานศึกษา')+'</h2><h3>'+escapeHTML(s.title)+' ภาคเรียนที่ '+escapeHTML(db.semester)+' ปีการศึกษา '+escapeHTML(db.year)+'</h3><table><thead><tr>'+s.rows[0].map(c=>'<th>'+escapeHTML(c)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.slice(1).map(r=>'<tr>'+r.map(c=>'<td>'+escapeHTML(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>').join('');
+ let doc=frame.contentDocument;doc.open();doc.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>ตารางสอน</title><style>@page{size:A4 landscape;margin:11mm}body{font:12px Tahoma,Arial,sans-serif;color:#222}h2,h3{text-align:center;margin:5px}h2{font-size:17px}h3{font-size:14px;margin-bottom:12px}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{border:1px solid #666;text-align:center;vertical-align:middle;padding:6px 4px;overflow-wrap:anywhere}th{background:#dae6f2}td{height:35px}.page{break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}</style></head><body>'+body+'</body></html>');doc.close();setTimeout(()=>{frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>frame.remove(),2000)},300);
+}
+
+// รายงานฉบับพิมพ์ตามตาราง ป.1: วันอยู่ด้านซ้าย คาบ/เวลาอยู่ด้านบน
+const SCHOOL_TIMES=['08.30–09.20','09.20–10.10','10.10–11.00','11.00–11.50','13.00–13.50','13.50–14.40','14.40–15.30','15.30–16.20','16.20–17.10','17.10–18.00','18.00–18.50','18.50–19.40'];
+function schoolPeriods(){return Math.min(12,Math.max(1,Number(db.periods)||7))}
+function slotFor(kind,obj,d,p){
+ if(!obj)return null;
+ return db.slots.find(s=>s.day===d&&s.period===p&&(kind==='class'?s.classId===obj.id:db.assignments.some(a=>a.id===s.assignmentId&&teaches(a,obj.id))))||null;
+}
+function periodInfo(p,kind,obj){
+ const sl=slotFor(kind,obj,p.day,p.period);if(!sl)return {top:'',bottom:'',key:''};
+ const a=db.assignments.find(a=>a.id===sl.assignmentId),su=db.subjects.find(x=>x.id===a?.subjectId);
+ return {top:su?.name||'',bottom:kind==='class'?teacherLabel(a):nameOf('classes',sl.classId),key:sl.assignmentId||''};
+}
+function schoolReport(kind,obj){
+ const count=schoolPeriods(),rows=[],merges=[];
+ const descriptor=kind==='class'?'ชั้น '+obj.name:'ครูผู้สอน '+obj.name+'\n'+teacherTeachingHoursLabel(obj.id);
+ const adviser=kind==='class'?(db.classAdvisors?.[obj.id]||''):'';
+ rows.push([(kind==='class'?'ตารางเรียน':'ตารางสอน')+' '+(db.school||'โรงเรียน')]);
+ rows.push(['ภาคเรียนที่ '+db.semester+' ปีการศึกษา '+db.year]);
+ rows.push([descriptor+(adviser?'\nครูประจำชั้น '+adviser:'')]);
+ const header=['วัน'];
+ for(let p=0;p<count;p++){
+   if(p===4)header.push('พักกลางวัน\n11.50–13.00 น.');
+   header.push('คาบ '+(p+1)+'\n'+(SCHOOL_TIMES[p]||'')+' น.');
+ }
+ rows.push(header);
+ const lunch=count>4?6:0; // Excel column F for lunch when the fifth period exists
+ if(lunch)merges.push('F5:F9');
+ for(let d=0;d<5;d++){
+   const row=[DAYS[d]];
+   for(let p=0;p<count;p++){
+     if(p===4)row.push(d===0?'พักกลางวัน':'');
+     const c=periodInfo({day:d,period:p},kind,obj);
+     row.push([c.top,c.bottom].filter(Boolean).join('\n'));
+   }
+   rows.push(row);
+   // Merge consecutive slots when the assignment is identical (never across lunch).
+   for(let p=0;p<count;){
+     const cur=periodInfo({day:d,period:p},kind,obj);
+     if(!cur.key){p++;continue}
+     let e=p+1;
+     while(e<count&&e!==4&&periodInfo({day:d,period:e},kind,obj).key===cur.key)e++;
+     if(e>p+1){
+       const col=xlsxCol(p+2+(p>=4?1:0)),to=xlsxCol(e+1+(p>=4?1:0));
+       merges.push(col+(d+5)+':'+to+(d+5));
+       // Blank all cells except the first: merged cell value is held at the top-left
+       for(let k=p+1;k<e;k++)row[k+1+(k>=4?1:0)]='';
+     }
+     p=e;
+   }
+ }
+ // ส่วนท้ายเอกสารแบบทางการ (ไม่มีการสมมติชื่อผู้ลงนาม)
+ const last=xlsxCol(header.length),split=Math.ceil(header.length/2);
+ const placed=kind==='class'?db.slots.filter(sl=>sl.classId===obj.id).length:teacherTeachingLoad(obj.id).scheduled;
+ const note=kind==='class'?'จัดตารางเรียนแล้ว '+placed+' คาบ/สัปดาห์':teacherTeachingHoursLabel(obj.id);
+ rows.push([note],['']);
+ const signature=new Array(header.length).fill('');
+ signature[0]='ลงชื่อ ..........................................................\n'+(kind==='class'?'ผู้จัดตารางเรียน':'ครูผู้สอน');
+ signature[split]='ลงชื่อ ..........................................................\nผู้ตรวจสอบ';
+ rows.push(signature);
+ merges.push('A10:'+last+'10','A11:'+last+'11','A12:'+xlsxCol(split)+'12',xlsxCol(split+1)+'12:'+last+'12');
+ return {name:(kind==='class'?'ห้อง ':'ครู ')+obj.name,title:(kind==='class'?'ตารางเรียน ':'ตารางสอน ')+obj.name,kind,objId:obj.id,rows,merges,layout:'school',officialFooterRows:[10,11,12]};
+}
+function teacherLoadSheet(){
+ const rows=[
+  ['สรุปจำนวนชั่วโมงสอนรายครู '+(db.school||'โรงเรียน')],
+  ['ภาคเรียนที่ '+db.semester+' ปีการศึกษา '+db.year],
+  ['1 คาบ = 1 ชั่วโมงสอนตามตาราง (50 นาที) | ไม่นับชั่วโมงสอนแทน | ครูร่วมสอนนับให้แต่ละคน'],
+  ['ที่','ชื่อ–สกุลครู','วิชาที่สอน','ห้องที่สอน','ภาระสอน (ชม./สัปดาห์)','จัดลงตารางแล้ว (ชม./สัปดาห์)','ยังไม่จัด (ชม./สัปดาห์)','สถานะ']
+ ];
+ const data=teacherLoadRows();
+ for(const r of data)rows.push([r.index,r.name,r.subjects,r.classes,r.planned,r.scheduled,r.remaining,r.status]);
+ const totals=data.reduce((o,r)=>({planned:o.planned+r.planned,scheduled:o.scheduled+r.scheduled,remaining:o.remaining+r.remaining}),{planned:0,scheduled:0,remaining:0});
+ rows.push(['','รวมภาระของครูทั้งหมด (นับครูร่วมสอน)','', '',totals.planned,totals.scheduled,totals.remaining,'']);
+ return {name:'สรุปชั่วโมงสอนครู',title:'สรุปจำนวนชั่วโมงสอนรายครู',rows,layout:'teacherLoad'};
+}
+function schoolSheets(){
+ const out=[teacherLoadSheet(),...db.classes.map(c=>schoolReport('class',c)),...db.teachers.map(t=>schoolReport('teacher',t))];
+ const hist=[['วันที่','คาบ','ห้องเรียน','รายวิชา','ครูผู้สอนเดิม','ครูผู้สอนแทน','สาเหตุ']];
+ for(const r of db.substitutions||[]){const sl=db.slots.find(s=>s.id===r.slotId),a=db.assignments.find(a=>a.id===sl?.assignmentId);
+   hist.push([r.date||'',sl?String(sl.period+1):'',sl?nameOf('classes',sl.classId):'',a?subjectLabel(a.subjectId):'',a?teacherLabel(a):'',nameOf('teachers',r.subTeacherId),r.reason||'']);
+ }
+ out.push({name:'ประวัติสอนแทน',title:'ประวัติการจัดสอนแทน',rows:hist,layout:'history'});
+ return out;
+}
+function reportSheets(){return schoolSheets()}
+function xlsxCol(n){let t='';while(n){n--;t=String.fromCharCode(65+n%26)+t;n=Math.floor(n/26)}return t}
+function xlsxColorPalette(){
+ const colors=new Set();for(const su of db.subjects){const bg=lessonColor(su.name);if(bg)colors.add(bg)}
+ return [...colors].sort();
+}
+function xlsxColorStyle(name){
+ const bg=lessonColor(name);if(!bg)return 3;
+ const index=xlsxColorPalette().indexOf(bg);
+ return index<0?3:5+index;
+}
+function xlsxSheet(rows,meta){
+ const school=meta?.layout==='school',formal=meta?.layout==='subDaily',teacherSummary=meta?.layout==='teacherLoad',merges=[];
+ if(school||formal||teacherSummary){const last=xlsxCol(rows[3].length);merges.push('A1:'+last+'1','A2:'+last+'2','A3:'+last+'3',...(meta.merges||[]))}
+ let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews><sheetFormatPr defaultRowHeight="25"/>'+(teacherSummary?'<cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/><col min="3" max="4" width="15" customWidth="1"/><col min="5" max="7" width="26" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/></cols>':formal?'<cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="9" customWidth="1"/><col min="3" max="3" width="20" customWidth="1"/><col min="4" max="4" width="19" customWidth="1"/><col min="5" max="5" width="29" customWidth="1"/><col min="6" max="7" width="34" customWidth="1"/><col min="8" max="8" width="19" customWidth="1"/></cols>':'<cols><col min="1" max="1" width="17" customWidth="1"/><col min="2" max="14" width="22" customWidth="1"/></cols>')+'<sheetData>';
+ const mapped=new Set();for(const range of merges){const [from,to]=range.split(':');let a=from.match(/([A-Z]+)(\d+)/),b=to.match(/([A-Z]+)(\d+)/);if(!a||!b)continue;
+   const val=c=>c.split('').reduce((acc,x)=>acc*26+x.charCodeAt(0)-64,0);
+   for(let r=+a[2];r<=+b[2];r++)for(let c=val(a[1]);c<=val(b[1]);c++)if(r!==+a[2]||c!==val(a[1]))mapped.add(xlsxCol(c)+r);
+ }
+ rows.forEach((row,i)=>{
+   const title=(school||formal||teacherSummary)&&i<3,header=(school||formal||teacherSummary)?i===3:i===0;
+   const fontPt=getOutputStyle().size;
+   const schoolFooter=school&&i>=9;
+   const rowHeight=schoolFooter?(i===9?Math.max(27,fontPt*2):i===10?16:Math.max(58,fontPt*3.5)):title?Math.max(i===2?45:29,fontPt*(i===2?3:2)):header?Math.max(51,fontPt*3.6):formal?Math.max(40,fontPt*3.0):school?Math.max(92,fontPt*7.3):teacherSummary?Math.max(31,fontPt*2.15):Math.max(43,fontPt*3);
+   xml+='<row r="'+(i+1)+'" ht="'+rowHeight+'" customHeight="1">';
+   row.forEach((cell,j)=>{
+     const loc=xlsxCol(j+1)+(i+1);if(mapped.has(loc))return;
+     const value=String(cell??'').replaceAll('\\n','\n');
+     // styles: 0 blank, 1 title, 2 header, 3 body, 4 lunch
+     let style=school&&i>=9?(i===9?5+xlsxColorPalette().length:6+xlsxColorPalette().length):title?1:header?2:school&&(j===5&&rows[3]?.[5]?.startsWith('พักกลางวัน'))?4:3;
+     if(school&&!title&&!header&&i>=4&&i<9&&j>0&&style!==4){
+       const p=j-1-(j>=6?1:0);
+       if(p>=0&&p<schoolPeriods()){
+         const obj=db[meta.kind==='class'?'classes':'teachers'].find(x=>x.id===meta.objId);
+         const sl=slotFor(meta.kind,obj,i-4,p);
+         const a=db.assignments.find(x=>x.id===sl?.assignmentId);
+         const su=db.subjects.find(x=>x.id===a?.subjectId);
+         if(su)style=xlsxColorStyle(su.name);
+       }
+     }
+     if(teacherSummary&&i>=4&&(j===0||j>=2&&j<=6)&&value!==''&&Number.isFinite(Number(value))){
+       xml+='<c r="'+loc+'" t="n" s="'+style+'"><v>'+Number(value)+'</v></c>';
+     }else{
+       xml+='<c r="'+loc+'" t="inlineStr" s="'+style+'"><is><t xml:space="preserve">'+xesc(value)+'</t></is></c>';
+     }
+   });xml+='</row>';
+ });
+ xml+='</sheetData>';
+ if(merges.length)xml+='<mergeCells count="'+merges.length+'">'+merges.map(m=>'<mergeCell ref="'+m+'"/>').join('')+'</mergeCells>';
+ xml+='<printOptions horizontalCentered="1"/><pageMargins left="0.22" right="0.22" top="0.26" bottom="0.26" header="0.12" footer="0.12"/><pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="'+(teacherSummary?'0':'1')+'"/></worksheet>';
+ return xml;
+}
+function printSchoolLayout(kind){
+ let pages=schoolSheets().filter(s=>s.layout==='school');
+ if(kind==='selected'){
+   const k=$('viewMode').value,id=$('viewTarget').value;
+   pages=pages.filter(s=>s.kind===k&&s.objId===id);
+ } else if(kind==='class')pages=pages.filter(s=>s.kind==='class');
+ else if(kind==='teacher')pages=pages.filter(s=>s.kind==='teacher');
+ if(kind==='sub')pages=schoolSheets().filter(s=>s.layout==='history');
+ if(!pages.length||(!db.slots.length&&kind!=='sub'))return alert('ยังไม่มีตารางให้พิมพ์');
+ if(kind==='sub'&&!(db.substitutions||[]).length)return alert('ยังไม่มีประวัติสอนแทน');
+ const count=schoolPeriods(),html=pages.map(s=>{
+   if(s.layout==='history'){
+      return '<section class="page"><h2>'+escapeHTML(db.school||'โรงเรียน')+'</h2><h3>ประวัติการจัดสอนแทน ภาคเรียนที่ '+escapeHTML(db.semester)+' ปีการศึกษา '+escapeHTML(db.year)+'</h3><table class="history"><thead><tr>'+s.rows[0].map(t=>'<th>'+escapeHTML(t)+'</th>').join('')+'</tr></thead><tbody>'+s.rows.slice(1).map(r=>'<tr>'+r.map(c=>'<td>'+escapeHTML(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';
+   }
+   const obj=db[s.kind==='class'?'classes':'teachers'].find(x=>x.id===s.objId);
+   let head='<tr><th class="day">วัน</th>';
+   for(let p=0;p<count;p++){
+     if(p===4)head+='<th class="lunch-heading">พักกลางวัน<div class="time">11.50–13.00 น.</div></th>';
+     head+='<th><div>คาบ '+(p+1)+'</div><div class="time">'+escapeHTML(SCHOOL_TIMES[p]||'')+' น.</div></th>';
+   }
+   head+='</tr>';
+   let body='';
+   for(let d=0;d<5;d++){
+     body+='<tr><th class="day">'+DAYS[d]+'</th>';
+     for(let p=0;p<count;){
+       if(p===4&&d===0)body+='<td class="lunch-column" rowspan="5"><div>พักกลางวัน</div></td>';
+       const val=periodInfo({day:d,period:p},s.kind,obj);
+       let end=p+1;
+       if(val.key){while(end<count&&end!==4&&periodInfo({day:d,period:end},s.kind,obj).key===val.key)end++}
+       const span=end-p;
+       const bg=lessonColor(val.top),ink=textOnColor(bg);
+       body+='<td class="lesson"'+(bg?' style="background-color:'+bg+';color:'+ink+'"':'')+(span>1?' colspan="'+span+'"':'')+'><div class="subject">'+escapeHTML(val.top)+'</div><div class="teacher">'+escapeHTML(val.bottom)+'</div></td>';
+       p=end;
+     }
+     body+='</tr>';
+   }
+   const descriptor=s.kind==='class'?'ชั้น '+obj.name:'ครูผู้สอน '+obj.name;
+   const adviser=s.kind==='class'?(db.classAdvisors?.[obj.id]||''):'';
+   const placed=s.kind==='class'?db.slots.filter(sl=>sl.classId===obj.id).length:teacherTeachingLoad(obj.id).scheduled;
+   const officialHours=s.kind==='class'?'จัดตารางเรียนแล้ว '+placed+' คาบ/สัปดาห์':teacherTeachingHoursLabel(obj.id);
+   const signer=s.kind==='class'?'ผู้จัดตารางเรียน':'ครูผู้สอน';
+   return '<section class="page"><div class="formal-heading"><h2>'+(s.kind==='class'?'ตารางเรียน ':'ตารางสอน ')+escapeHTML(db.school||'โรงเรียน')+'</h2><h3>ภาคเรียนที่ '+escapeHTML(db.semester)+' ปีการศึกษา '+escapeHTML(db.year)+'</h3><h3>'+escapeHTML(descriptor)+'</h3>'+(s.kind==='teacher'?'<h3>'+escapeHTML(teacherTeachingHoursLabel(obj.id))+'</h3>':'')+(adviser?'<h3>ครูประจำชั้น '+escapeHTML(adviser)+'</h3>':'')+'</div><table class="timetable"><thead>'+head+'</thead><tbody>'+body+'</tbody></table><div class="official-footer"><div class="official-count">'+escapeHTML(officialHours)+'</div><div class="official-signatures"><div>ลงชื่อ ..........................................................<br>'+signer+'</div><div>ลงชื่อ ..........................................................<br>ผู้ตรวจสอบ</div></div></div></section>';
+ }).join('');
+ const output=getOutputStyle();
+ const outputFont='"'+output.font+'","TH Sarabun New","TH SarabunPSK",Sarabun,Tahoma,sans-serif';
+ const pt=output.size;
+ const printZoom=pt>=18?0.68:pt>=16?0.78:pt>=14?0.85:1; // ย่อพอดีกระดาษ A4 แนวนอน ลดโอกาสแยกเป็นสองหน้า
+ const css=`@page{size:A4 landscape;margin:9mm 8mm}*{box-sizing:border-box}html,body{padding:0;margin:0}body{font-family:${outputFont};font-size:${pt}pt;color:#141414}h2,h3{text-align:center;margin:0 0 5px}h2{font-size:${pt+5}pt;font-weight:600}h3{font-size:${pt+2}pt;font-weight:500}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}html,body,table,th,td,td.lesson{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:10px}th,td{border:1.05px solid #292929;text-align:center;vertical-align:middle;padding:4px 2px;overflow-wrap:anywhere}th{font-weight:600}table.timetable th.day{width:8.2%;font-size:${Math.max(11,pt-1)}pt}table.timetable thead th{height:49px;font-size:${Math.max(11,pt-2)}pt}table.timetable td.lesson{height:85px;font-size:${pt}pt}table.timetable .subject{font-size:${Math.max(11,pt-1)}pt;line-height:1.15;min-height:18px}table.timetable .teacher{font-size:${Math.max(10,pt-2)}pt;margin-top:9px;line-height:1.2}table.timetable .lunch-column{width:7%;font-size:${Math.max(11,pt-1)}pt}table.timetable .lunch-column div{writing-mode:vertical-rl;transform:rotate(180deg);margin:auto;white-space:nowrap}table.timetable .lunch-heading{width:7%;font-size:${Math.max(10,pt-2)}pt}.time{font-size:${Math.max(9,pt-3)}pt;font-weight:400;margin-top:3px;white-space:nowrap}.history th,.history td{height:31px;font-size:${Math.max(10,pt-2)}pt}.formal-heading{text-align:center;line-height:1.35;margin-bottom:9px}.formal-heading h2{font-weight:700}.formal-heading h3{font-weight:500}.official-footer{break-inside:avoid;page-break-inside:avoid;padding-top:9px}.official-count{text-align:right;font-size:${Math.max(11,pt-1)}pt}.official-signatures{display:flex;justify-content:space-around;gap:22px;text-align:center;margin-top:21px;line-height:1.6;font-size:${Math.max(11,pt-1)}pt}.official-signatures>div{width:43%}td.lesson{height:77px!important}@media print{.page{zoom:${printZoom}}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}}`;
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-200vw;top:0;width:1px;height:1px';document.body.appendChild(frame);
+ const doc=frame.contentDocument;doc.open();doc.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>ตารางเรียน</title><style>'+css+'</style></head><body>'+html+'</body></html>');doc.close();
+ setTimeout(()=>{frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>frame.remove(),2500)},500);
+}
+$('exportXLSX').onclick=makeXLSX;
+function printTeacherLoadSummary(){
+ if(!db.teachers.length)return alert('ยังไม่มีข้อมูลรายชื่อครูสำหรับสรุป');
+ const rows=teacherLoadSheet().rows;
+ const output=getOutputStyle(),pt=output.size;
+ const html='<h2>สรุปจำนวนชั่วโมงสอนรายครู '+escapeHTML(db.school||'โรงเรียน')+'</h2>'+
+  '<h3>ภาคเรียนที่ '+escapeHTML(db.semester)+' ปีการศึกษา '+escapeHTML(db.year)+'</h3>'+
+  '<p class="explain">1 คาบ = 1 ชั่วโมงสอนตามตารางเรียน (คาบละ 50 นาที) • ชั่วโมงครูร่วมสอนนับให้ครูแต่ละคน • ไม่รวมชั่วโมงสอนแทน</p>'+
+  '<table><thead><tr>'+rows[3].map(v=>'<th>'+escapeHTML(v)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(4).map((r,i)=>'<tr'+(i===rows.length-5?' class="total"':'')+'>'+r.map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-200vw;top:0;width:1px;height:1px';document.body.appendChild(frame);
+ const css='@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:"'+output.font+'","TH Sarabun New",Sarabun,Tahoma,sans-serif;font-size:'+pt+'pt;color:#161616;margin:0}h2,h3{text-align:center;margin:0 0 4px}h2{font-size:'+(pt+4)+'pt}h3{font-size:'+(pt+1)+'pt}.explain{text-align:center;font-size:'+Math.max(10,pt-2)+'pt;margin:10px 0}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #333;padding:5px 3px;text-align:center;overflow-wrap:anywhere}th{background:#e9eef5;font-weight:700}td:nth-child(2){text-align:left}th:nth-child(1){width:5%}th:nth-child(2){width:29%}th:nth-child(3),th:nth-child(4){width:8%}th:nth-child(5),th:nth-child(6){width:15%}th:nth-child(7){width:12%}th:nth-child(8){width:8%}.total{font-weight:bold;background:#f1f4f8}tr{page-break-inside:avoid}thead{display:table-header-group}';
+ const doc=frame.contentDocument;doc.open();doc.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>สรุปชั่วโมงสอนรายครู</title><style>'+css+'</style></head><body>'+html+'</body></html>');doc.close();
+ setTimeout(()=>{frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>frame.remove(),2500)},500);
+}
+$('exportTeacherLoadXlsx').onclick=()=>{if(!db.teachers.length)return alert('ยังไม่มีรายชื่อครู');makeXLSX([teacherLoadSheet()],'สรุปจำนวนชั่วโมงสอนรายครู_ภาคเรียน'+db.semester+'_ปี'+db.year+'.xlsx')};
+$('printTeacherLoad').onclick=printTeacherLoadSummary;
+$('printAll').onclick=()=>printSchoolLayout('all');
+$('printSubHistory').onclick=()=>printSchoolLayout('sub');
+
+
+$('adviserInput').addEventListener('change',()=>{
+ if($('viewMode').value!=='class')return;
+ const id=$('viewTarget').value;if(!id)return;
+ db.classAdvisors=db.classAdvisors||{};
+ db.classAdvisors[id]=$('adviserInput').value.trim();save();renderGrid();
+});
+$('printOne').onclick=()=>printSchoolLayout('selected');
+// ส่งออก Excel รายห้อง / รายครู ที่กำลังดู โดยใช้แม่แบบเดียวกับ PDF
+function exportSelectedScheduleExcel(){
+ const kind=$('viewMode').value==='teacher'?'teacher':'class';
+ const id=$('viewTarget').value;
+ const collection=kind==='class'?db.classes:db.teachers;
+ const obj=collection.find(x=>x.id===id);
+ if(!obj)return alert('กรุณาเลือก'+(kind==='class'?'ห้องเรียน':'ครูผู้สอน')+'ก่อนส่งออก Excel');
+ const hasTimetable=db.slots.some(s=>kind==='class'?s.classId===id:db.assignments.some(a=>a.id===s.assignmentId&&teaches(a,id)));
+ if(!hasTimetable)return alert('ยังไม่มีคาบเรียนในตารางที่เลือก กรุณาจัดตารางก่อนส่งออก Excel');
+ // บันทึกชื่อครูประจำชั้นล่าสุดจากช่องกรอก ก่อนสร้างหัวเอกสาร Excel
+ if(kind==='class'){
+   db.classAdvisors=db.classAdvisors||{};
+   const latest=$('adviserInput').value.trim();
+   if(db.classAdvisors[id]!==latest){db.classAdvisors[id]=latest;save();}
+ }
+ const suffix=(kind==='class'?'ตารางเรียน_':'ตารางสอน_')+obj.name;
+ const safe=suffix.replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,'_').slice(0,90);
+ makeXLSX([schoolReport(kind,obj)],safe+'_ภาคเรียน'+db.semester+'_ปี'+db.year+'.xlsx');
+}
+$('exportSelectedExcel').onclick=exportSelectedScheduleExcel;
+$('exportAllExcelSchedule').onclick=()=>{
+ if(!db.slots.length)return alert('ยังไม่มีตารางเรียน กรุณาจัดตารางก่อนส่งออก');
+ makeXLSX(schoolSheets().filter(s=>s.layout==='school'),'ตารางเรียนและตารางสอนทุกห้อง_ภาคเรียน'+db.semester+'_ปี'+db.year+'.xlsx');
+};
+
+
+
+
+// ---- Official daily substitute roster: matching TH Sarabun Excel/PDF outputs ----
+function subThaiDate(iso){
+ const parts=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+ if(!parts)return '—';
+ const y=+parts[1],m=+parts[2],d=+parts[3];
+ const dt=new Date(y,m-1,d);
+ if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d)return '—';
+ const months=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+ return 'วัน'+['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][dt.getDay()]+'ที่ '+d+' '+months[m-1]+' พ.ศ. '+(y+543);
+}
+function subDailyData(date){
+ return subRecords().filter(x=>x.date===date).map(r=>{
+   const slot=db.slots.find(s=>s.id===r.slotId);
+   const assignment=db.assignments.find(a=>a.id===slot?.assignmentId);
+   const subj=db.subjects.find(x=>x.id===assignment?.subjectId);
+   return {
+     slot:r.slotId||'',period:slot?.period??r.period??-1,
+     time:SCHOOL_TIMES[slot?.period??r.period??-1]||'—',
+     room:slot?nameOf('classes',slot.classId):nameOf('classes',r.classId),
+     subject:subj?.name||'ไม่พบชื่อวิชา',
+     absent:nameOf('teachers',r.absentTeacherId),
+     replacement:nameOf('teachers',r.subTeacherId),
+     reason:r.reason||'—'
+   };
+ }).sort((a,b)=>a.period-b.period||a.room.localeCompare(b.room,'th')||a.absent.localeCompare(b.absent,'th'));
+}
+const SUB_DAILY_HEADERS=['ที่','คาบ','เวลา','ชั้น/ห้องเรียน','รายวิชา/กิจกรรม','ครูผู้สอนเดิม','ครูผู้สอนแทน','สาเหตุ'];
+function subFormalPreview(){
+ const container=$('subOfficialPreview');if(!container)return;
+ const date=$('subDate').value, data=subDailyData(date);
+ if(!date){container.innerHTML='<p class="hint">กรุณาเลือกวันที่เพื่อแสดงตัวอย่างตารางสอนแทน</p>';return}
+ const header=`<div class="sub-doc-heading"><strong>ตารางจัดสอนแทน ${escapeHTML(db.school||'โรงเรียน')}</strong><div>ภาคเรียนที่ ${escapeHTML(db.semester)} ปีการศึกษา ${escapeHTML(db.year)}</div><div>ประจำวันที่ ${escapeHTML(subThaiDate(date))}</div></div>`;
+ const rows=data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.period+1}</td><td>${escapeHTML(r.time)} น.</td><td>${escapeHTML(r.room)}</td><td>${escapeHTML(r.subject)}</td><td>${escapeHTML(r.absent)}</td><td>${escapeHTML(r.replacement)}</td><td>${escapeHTML(r.reason)}</td></tr>`).join('');
+ container.innerHTML=header+`<table class="sub-official-table"><thead><tr>${SUB_DAILY_HEADERS.map(h=>'<th>'+escapeHTML(h)+'</th>').join('')}</tr></thead><tbody>${rows||'<tr><td colspan="8">ยังไม่มีรายการสอนแทนที่บันทึกไว้ในวันที่เลือก</td></tr>'}</tbody></table><div class="sub-doc-count">รวม ${data.length} รายการ</div><div class="sub-doc-sign"><span>ลงชื่อ ..........................................................<br>ผู้จัดตารางสอนแทน</span><span>ลงชื่อ ..........................................................<br>ผู้ตรวจสอบ</span></div>`;
+}
+function subDailySheet(date){
+ const data=subDailyData(date),rowcount=data.length;
+ const rows=[
+   ['ตารางจัดสอนแทน '+(db.school||'โรงเรียน')],
+   ['ภาคเรียนที่ '+db.semester+' ปีการศึกษา '+db.year],
+   ['ประจำวันที่ '+subThaiDate(date)],
+   SUB_DAILY_HEADERS,
+   ...data.map((r,i)=>[i+1,r.period+1,r.time+' น.',r.room,r.subject,r.absent,r.replacement,r.reason])
+ ];
+ const summary=rows.length+1,signature=summary+2;
+ rows.push(['รวม '+rowcount+' รายการ'],[''],['ลงชื่อ ..........................................................','ผู้จัดตารางสอนแทน','','','ลงชื่อ ..........................................................','ผู้ตรวจสอบ','','']);
+ // Final signature row has separate merged pairs to retain editable text.
+ const merges=['A'+summary+':H'+summary,'A'+signature+':D'+signature,'E'+signature+':H'+signature];
+ rows[signature-1]=['ลงชื่อ ..........................................................\nผู้จัดตารางสอนแทน','','','','ลงชื่อ ..........................................................\nผู้ตรวจสอบ','','',''];
+ return {name:'สอนแทน '+date,title:'ตารางสอนแทน '+date,rows,merges,layout:'subDaily'};
+}
+function exportDailySubXlsx(){
+ const date=$('subDate').value;
+ if(subWeekday(date)<0||subWeekday(date)>4)return subSetStatus('กรุณาเลือกวันที่วันจันทร์–ศุกร์',true);
+ if(!subDailyData(date).length)return subSetStatus('ยังไม่มีรายการสอนแทนที่บันทึกไว้ในวันที่เลือก',true);
+ makeXLSX([subDailySheet(date)],'ตารางจัดสอนแทน_'+date+'.xlsx');
+}
+function printFormalSubstitution(){
+ const date=$('subDate').value;
+ if(subWeekday(date)<0||subWeekday(date)>4)return subSetStatus('กรุณาเลือกวันที่วันจันทร์–ศุกร์',true);
+ const data=subDailyData(date);
+ if(!data.length)return subSetStatus('ยังไม่มีรายการสอนแทนที่บันทึกไว้ในวันที่เลือก',true);
+ const {font,size}=getOutputStyle();
+ const fontStack='"'+font+'","TH Sarabun New","TH SarabunPSK",Sarabun,Tahoma,sans-serif';
+ const printZoom=size>=18?.83:size>=16?.90:1;
+ const css=`@page{size:A4 landscape;margin:11mm 10mm}*{box-sizing:border-box}html,body{margin:0;padding:0;color:#171717}body{font-family:${fontStack};font-size:${size}pt}h1,h2,h3{text-align:center;margin:0}h1{font-size:${size+5}pt}h2{font-size:${size+2}pt;font-weight:500}h3{font-size:${size+1}pt;font-weight:500}table{border-collapse:collapse;table-layout:fixed;width:100%;margin-top:14px}th,td{border:1px solid #333;padding:5px 4px;vertical-align:middle;text-align:center;overflow-wrap:anywhere;line-height:1.2}th{font-weight:600;background:#f2f2f2}th:nth-child(1){width:4%}th:nth-child(2){width:5%}th:nth-child(3){width:11%}th:nth-child(4){width:13%}th:nth-child(5){width:17%}th:nth-child(6){width:17%}th:nth-child(7){width:18%}th:nth-child(8){width:15%}.count{text-align:right;margin-top:8px}.signatures{display:flex;justify-content:space-around;gap:24px;margin-top:32px;text-align:center}.signatures div{min-width:34%}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.signature-box{break-inside:avoid;page-break-inside:avoid}@media print{body{zoom:${printZoom}}}`;
+ let rows=data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.period+1}</td><td>${escapeHTML(r.time)} น.</td><td>${escapeHTML(r.room)}</td><td>${escapeHTML(r.subject)}</td><td>${escapeHTML(r.absent)}</td><td>${escapeHTML(r.replacement)}</td><td>${escapeHTML(r.reason)}</td></tr>`).join('');
+ const html=`<h1>ตารางจัดสอนแทน ${escapeHTML(db.school||'โรงเรียน')}</h1><h2>ภาคเรียนที่ ${escapeHTML(db.semester)} ปีการศึกษา ${escapeHTML(db.year)}</h2><h3>ประจำวันที่ ${escapeHTML(subThaiDate(date))}</h3><table><thead><tr>${SUB_DAILY_HEADERS.map(x=>'<th>'+escapeHTML(x)+'</th>').join('')}</tr></thead><tbody>${rows}</tbody></table><div class="signature-box"><div class="count">รวม ${data.length} รายการ</div><div class="signatures"><div>ลงชื่อ ..........................................................<br>ผู้จัดตารางสอนแทน</div><div>ลงชื่อ ..........................................................<br>ผู้ตรวจสอบ</div></div></div>`;
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-200vw;top:0;width:1px;height:1px';document.body.appendChild(frame);
+ const doc=frame.contentDocument;doc.open();doc.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>ตารางจัดสอนแทน '+escapeHTML(date)+'</title><style>'+css+'</style></head><body>'+html+'</body></html>');doc.close();
+ setTimeout(()=>{frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>frame.remove(),2500)},500);
+}
+$('subXlsx').onclick=exportDailySubXlsx;
+
+initExportControls();render();
+</script>
+<script>
+'use strict';
+// Cloud sync layer: password auth + membership RLS + version-checked writes.
+// Local-only operation remains fully supported when cloud login is not configured.
+(function(){
+const SKEY='schoolTimetableCloudConnectionV2';
+const IDRE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const cloud={url:'',key:'',school:'',email:'',session:null,userId:'',role:'',version:null,active:false,enabled:false,dirty:false,pushing:false,checking:false,applying:false,seq:0,retryTimer:null,flushTimer:null,pollTimer:null};
+const el=id=>document.getElementById(id);
+const dirtyKey=id=>'schoolCloudUnsynced:'+id;
+const verKey=id=>'schoolCloudKnownVersion:'+id;
+function status(s,k=''){let node=el('cloudStatus');node.className='status '+k;node.textContent=s;}
+function buttons(){let connected=!!cloud.session;['cloudLogout','cloudDownload','cloudUpload','cloudCheck'].forEach(id=>el(id).disabled=!connected);el('cloudLogin').disabled=connected;}
+function config(){return {url:el('cloudUrl').value.trim().replace(/\/+$/,''),key:el('cloudKey').value.trim(),school:el('cloudSchool').value.trim(),email:el('cloudEmail').value.trim()}}
+function saveCfg(){let x=config();localStorage.setItem(SKEY,JSON.stringify(x));}
+function loadCfg(){try{let c=JSON.parse(localStorage.getItem(SKEY)||'{}');el('cloudUrl').value=c.url||'';el('cloudKey').value=c.key||'';el('cloudSchool').value=c.school||'a9538c21-4f67-4df3-8a90-47059284aa72';el('cloudEmail').value=c.email||'';}catch(_){}}
+function validate(c){if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(c.url))throw Error('กรุณาระบุ Supabase Project URL แบบ https://...supabase.co');if(!c.key||c.key.length<20)throw Error('กรุณาระบุ publishable / anon key');if(/service_role|sb_secret_/i.test(c.key))throw Error('ห้ามใช้ service_role หรือ secret key ในโปรแกรมบนเว็บ');if(!IDRE.test(c.school))throw Error('รหัสโรงเรียนต้องเป็น UUID ตามไฟล์ SQL');if(!c.email||!el('cloudPassword').value)throw Error('กรุณากรอกอีเมลและรหัสผ่าน');}
+async function request(path,method='GET',payload=null){
+ if(!cloud.session)throw Error('กรุณาลงชื่อเข้าใช้อีกครั้ง');
+ const headers={'apikey':cloud.key,'Authorization':'Bearer '+cloud.session.access_token};
+ if(payload!==null)headers['Content-Type']='application/json';
+ if(method==='PATCH')headers['Prefer']='return=representation';
+ let controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ try{
+  const r=await fetch(cloud.url+path,{method,headers,body:payload===null?undefined:JSON.stringify(payload),signal:controller.signal});
+  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null}catch(_){throw Error('เซิร์ฟเวอร์ตอบกลับข้อมูลที่อ่านไม่ได้')}
+  if(!r.ok){if(r.status===401){cloud.enabled=false;cloud.session=null;buttons();}throw Error('เซิร์ฟเวอร์ '+r.status+': '+(j?.message||j?.error_description||j?.hint||j?.details||j?.error||'ติดต่อฐานข้อมูลไม่ได้'))}
+  return j;
+ }finally{clearTimeout(timer)}
+}
+async function signin(){
+ try{
+  const c=config();validate(c);const url=c.url+'/auth/v1/token?grant_type=password';
+  status('กำลังตรวจสอบบัญชีผู้ใช้งาน...');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+  let r;
+  try{r=await fetch(url,{method:'POST',headers:{'apikey':c.key,'Content-Type':'application/json'},body:JSON.stringify({email:c.email,password:el('cloudPassword').value}),signal:controller.signal})}finally{clearTimeout(timer)}
+  const raw=await r.json();if(!r.ok||!raw.access_token)throw Error(raw.msg||raw.error_description||raw.message||'บัญชีหรือรหัสผ่านไม่ถูกต้อง');
+  cloud.url=c.url;cloud.key=c.key;cloud.school=c.school;cloud.email=c.email;cloud.session=raw;cloud.userId=raw.user?.id||'';
+  const members=await request('/rest/v1/school_memberships?school_id=eq.'+encodeURIComponent(cloud.school)+'&user_id=eq.'+encodeURIComponent(cloud.userId)+'&select=role');
+  if(!Array.isArray(members)||members.length!==1||!['admin','editor'].includes(members[0].role))throw Error('บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าใช้ข้อมูลโรงเรียน โปรดให้ผู้ดูแลเพิ่มใน school_memberships');
+  cloud.role=members[0].role;
+  cloud.session.expires_at=Date.now()+Math.max(0,Number(raw.expires_in||3600)-60)*1000;
+  cloud.active=true;cloud.enabled=false;cloud.dirty=localStorage.getItem(dirtyKey(cloud.school))==='1';
+  cloud.version=localStorage.getItem(verKey(cloud.school))!==null?Number(localStorage.getItem(verKey(cloud.school))):null;
+  el('cloudPassword').value='';saveCfg();buttons();
+  status('ลงชื่อเข้าใช้สำเร็จ: '+cloud.email+'\nเลือก “โหลดข้อมูลล่าสุดจากออนไลน์” สำหรับเครื่องใหม่ หรือ “อัปโหลดข้อมูลเครื่องนี้” สำหรับเครื่องที่มีข้อมูลหลักอยู่แล้ว'+(cloud.dirty?'\nพบการเปลี่ยนแปลงในเครื่องที่ยังไม่ได้ส่งขึ้นออนไลน์ โปรดตรวจสอบก่อนโหลดข้อมูลทับ':''),'ok');
+  startPoll();setTimeout(autoConnect,100);
+ }catch(e){cloud.session=null;cloud.active=false;cloud.enabled=false;buttons();status('เชื่อมต่อไม่ได้: '+e.message,'error')}
+}
+async function renew(){
+ if(!cloud.session)throw Error('กรุณาลงชื่อเข้าใช้อีกครั้ง');
+ if(Date.now()<cloud.session.expires_at)return;
+ const r=await fetch(cloud.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':cloud.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:cloud.session.refresh_token})});
+ const j=await r.json();if(!r.ok||!j.access_token){cloud.session=null;cloud.enabled=false;buttons();throw Error('เซสชันหมดอายุ กรุณาลงชื่อเข้าใช้ใหม่')}
+ cloud.session={...j,expires_at:Date.now()+Math.max(0,Number(j.expires_in||3600)-60)*1000};
+}
+async function current(){await renew();const data=await request('/rest/v1/school_data?id=eq.'+encodeURIComponent(cloud.school)+'&select=id,school_name,data,version,updated_at');if(!Array.isArray(data)||data.length!==1)throw Error('ไม่พบฐานข้อมูลโรงเรียนหรือไม่มีสิทธิ์อ่านข้อมูล ตรวจสอบการติดตั้ง SQL และบัญชี');return data[0]}
+function validData(d){return d&&typeof d==='object'&&['teachers','classes','subjects','assignments','slots'].every(k=>Array.isArray(d[k]))}
+async function autoConnect(){
+ if(!cloud.session||cloud.enabled||cloud.dirty)return;
+ try{
+  const remote=await current();if(!validData(remote.data))return;
+  const known=localStorage.getItem(verKey(cloud.school));
+  const empty=!(db.teachers.length||db.classes.length||db.assignments.length||db.slots.length);
+  if(known!==null||empty){applyRemote(remote);status('เข้าสู่ระบบและโหลดข้อมูลออนไลน์อัตโนมัติ • รุ่น '+cloud.version+' • '+new Date().toLocaleString('th-TH'),'ok')}
+  else status('เครื่องนี้มีข้อมูลที่ยังไม่เคยซิงก์กับฐานข้อมูลนี้ โปรดสำรอง JSON ก่อนเลือกโหลดข้อมูลออนไลน์หรืออัปโหลดจากเครื่อง','error');
+ }catch(e){status('เชื่อมต่อแล้ว แต่ยังโหลดข้อมูลอัตโนมัติไม่ได้: '+e.message,'error')}
+}
+function applyRemote(r){
+ if(!validData(r.data))throw Error('รูปแบบข้อมูลออนไลน์ไม่ถูกต้อง ต้องเริ่มต้นอัปโหลดข้อมูลจากโปรแกรมก่อน');
+ cloud.applying=true;
+ try{db={...initial(),...r.data};saveOriginal();render();cloud.version=Number(r.version);localStorage.setItem(verKey(cloud.school),String(cloud.version));localStorage.removeItem(dirtyKey(cloud.school));cloud.dirty=false;cloud.enabled=true}finally{cloud.applying=false}
+}
+async function pull(first=false){
+ if(!cloud.session)return;
+ try{
+  const r=await current();
+  if(first&&(cloud.dirty||db.assignments.length||db.slots.length||db.teachers.length)&&!confirm('โหลดข้อมูลล่าสุดจากออนไลน์แทนข้อมูลในเครื่องนี้ใช่หรือไม่?\nหากมีข้อมูลในเครื่องที่ยังไม่สำรอง ควรดาวน์โหลด JSON ก่อน'))return;
+  if(!validData(r.data)){status('ฐานข้อมูลออนไลน์ยังว่าง หากเครื่องนี้มีข้อมูลครบ ให้เลือกอัปโหลดข้อมูลเครื่องนี้ขึ้นออนไลน์','error');return}
+  if(!first&&(cloud.dirty||cloud.pushing))return;
+  applyRemote(r);status('ซิงก์แล้ว • รุ่นข้อมูล '+cloud.version+' • '+new Date().toLocaleString('th-TH')+'\nคอมพิวเตอร์และโทรศัพท์จะเห็นข้อมูลล่าสุดหลังเข้าสู่ระบบเดียวกัน','ok');
+ }catch(e){status('ไม่สามารถโหลดข้อมูลออนไลน์: '+e.message,'error')}
+}
+async function initialUpload(){
+ try{
+  let latest=await current(),v=Number(latest.version),localKnown=localStorage.getItem(verKey(cloud.school));
+  if(v>0&&(localKnown===null||Number(localKnown)!==v)){
+   status('ฐานข้อมูลออนไลน์มีข้อมูลรุ่น '+v+' ซึ่งเครื่องนี้ยังไม่ทราบรุ่นล่าสุด เพื่อป้องกันการทับข้อมูล โปรดสำรอง JSON และโหลดข้อมูลออนไลน์ก่อน หากต้องการรวมข้อมูลต้องตรวจสอบรายการก่อน','error');return;
+  }
+  if(!db.assignments.length&&!db.slots.length&&!confirm('ยังไม่พบข้อมูลภาระสอนบนเครื่อง ต้องการอัปโหลดข้อมูลว่างหรือไม่?'))return;
+  if(!confirm('ยืนยันอัปโหลดข้อมูลในเครื่องนี้ไปยังฐานข้อมูลออนไลน์?\nโปรแกรมจะบันทึกแบบตรวจสอบเวอร์ชันเพื่อป้องกันข้อมูลชนกัน'))return;
+  cloud.version=v;cloud.enabled=true;cloud.dirty=true;cloud.seq++;localStorage.setItem(dirtyKey(cloud.school),'1');await flush();
+ }catch(e){status('อัปโหลดไม่สำเร็จ: '+e.message,'error')}
+}
+async function flush(){
+ if(!cloud.enabled||!cloud.session||!cloud.dirty||cloud.pushing)return;
+ cloud.pushing=true;let snap=cloud.seq;
+ try{
+  await renew();
+  if(cloud.version===null)throw Error('ยังไม่รู้เวอร์ชันข้อมูลออนไลน์ โปรดโหลดข้อมูลก่อน');
+  const before=cloud.version;
+  const rows=await request('/rest/v1/school_data?id=eq.'+encodeURIComponent(cloud.school)+'&version=eq.'+before+'&select=version,updated_at','PATCH',{data:JSON.parse(JSON.stringify(db)),version:before+1,updated_at:new Date().toISOString()});
+  if(!Array.isArray(rows)||rows.length!==1){cloud.enabled=false;cloud.dirty=true;status('พบการแก้ไขชนกัน: มีอุปกรณ์อื่นบันทึกก่อนแล้ว\nยังเก็บข้อมูลเครื่องนี้ไว้ โปรดสำรอง JSON แล้วตรวจสอบข้อมูลออนไลน์ก่อนตัดสินใจ','error');return}
+  cloud.version=Number(rows[0].version);localStorage.setItem(verKey(cloud.school),String(cloud.version));
+  if(snap===cloud.seq){cloud.dirty=false;localStorage.removeItem(dirtyKey(cloud.school));status('บันทึกออนไลน์สำเร็จ • รุ่น '+cloud.version+' • '+new Date().toLocaleString('th-TH'),'ok')}
+  else{cloud.dirty=true;status('กำลังส่งการเปลี่ยนแปลงล่าสุดขึ้นออนไลน์...')}
+ }catch(e){cloud.dirty=true;status('ยังไม่ได้ซิงก์: '+e.message+'\nข้อมูลยังอยู่ในเครื่อง โปรแกรมจะลองใหม่เมื่อเชื่อมต่อได้','error')}
+ finally{cloud.pushing=false;if(cloud.dirty&&cloud.enabled){clearTimeout(cloud.flushTimer);cloud.flushTimer=setTimeout(flush,9000)}}
+}
+async function check(){
+ if(!cloud.session||cloud.checking||cloud.pushing)return;
+ cloud.checking=true;
+ try{
+  const r=await current();
+  if(cloud.dirty){if(cloud.enabled){flush()}else{status('ข้อมูลในเครื่องยังไม่ได้ซิงก์ กรุณาสำรอง JSON ก่อนดำเนินการโหลดข้อมูลออนไลน์','error')}return}
+  if(!cloud.enabled){status('ข้อมูลออนไลน์รุ่น '+r.version+' พร้อมใช้งาน\nกด “โหลดข้อมูลล่าสุดจากออนไลน์” เพื่อใช้ข้อมูลร่วมกัน','ok');return}
+  if(Number(r.version)!==cloud.version)applyRemote(r);
+  status('ข้อมูลออนไลน์เป็นปัจจุบัน • รุ่น '+cloud.version+' • '+new Date().toLocaleString('th-TH'),'ok');
+ }catch(e){status('ตรวจสอบออนไลน์ไม่ได้: '+e.message,'error')}
+ finally{cloud.checking=false}
+}
+function startPoll(){if(cloud.pollTimer)clearInterval(cloud.pollTimer);cloud.pollTimer=setInterval(()=>{if(document.visibilityState==='visible'&&cloud.session)check()},15000)}
+function logout(){if(cloud.dirty&&!confirm('ยังมีข้อมูลไม่ได้ซิงก์ ต้องการออกจากระบบหรือไม่? (ข้อมูลในเครื่องยังอยู่)'))return;cloud.session=null;cloud.role='';cloud.enabled=false;cloud.active=false;clearInterval(cloud.pollTimer);clearTimeout(cloud.flushTimer);buttons();status('ออกจากระบบแล้ว ข้อมูลในเครื่องยังเปิดดูได้ กรุณาเข้าสู่ระบบก่อนใช้งานร่วมกับอุปกรณ์อื่น')}
+const saveOriginal=save;
+save=function(){saveOriginal();if(cloud.applying)return;
+ const sid=cloud.school||el('cloudSchool').value.trim();
+ if(sid&&localStorage.getItem(verKey(sid))!==null){
+  cloud.dirty=true;cloud.seq++;localStorage.setItem(dirtyKey(sid),'1');
+  if(cloud.session&&cloud.enabled){status('บันทึกในเครื่องแล้ว • รอซิงก์ออนไลน์...');clearTimeout(cloud.flushTimer);cloud.flushTimer=setTimeout(flush,950)}
+  else status('บันทึกในเครื่องแล้ว แต่ยังไม่เชื่อมต่อออนไลน์ โปรดลงชื่อเข้าใช้อีกครั้งก่อนซิงก์','error');
+ }
+};
+loadCfg();buttons();
+el('cloudLogin').addEventListener('click',signin);
+el('cloudLogout').addEventListener('click',logout);
+el('cloudDownload').addEventListener('click',()=>pull(true));
+el('cloudUpload').addEventListener('click',initialUpload);
+el('cloudCheck').addEventListener('click',check);
+window.addEventListener('online',()=>{if(cloud.dirty&&cloud.enabled)flush();else if(cloud.session)check()});
+window.addEventListener('beforeunload',e=>{if(cloud.dirty&&cloud.enabled){e.preventDefault();e.returnValue=''}});
+// No debug interface in production build
+})();
+</script>
+
+<script>
+// --- Portable, user-controlled backups. No credentials or files leave this device. ---
+(function(){
+ 'use strict';
+ const q=id=>document.getElementById(id);
+ const center=q('dataSafetyCenter'); if(!center)return;
+ const status=q('dataSafetyInfo');
+ const fileAPI=typeof window.showSaveFilePicker==='function' && typeof window.showOpenFilePicker==='function';
+ let linkedFile=null, changeNumber=0, writtenNumber=0, writing=false, pendingTimer=null, lastManualBackup=null, warning='', linkedFilename='';
+ const autosaveButtons=[q('safetyAttachNew'),q('safetyAttachExisting')];
+ if(!fileAPI){
+   autosaveButtons.forEach(b=>{b.disabled=true;b.title='เบราว์เซอร์นี้ไม่รองรับการบันทึกแฟ้มโดยตรง โปรดใช้ปุ่มบันทึก JSON';});
+ }
+ function dbCounts(){
+   const n=k=>Array.isArray(db[k])?db[k].length:0;
+   return `${n('teachers')} ครู • ${n('classes')} ห้อง • ${n('assignments')} รายการภาระสอน • ${n('slots')} คาบจัดแล้ว`;
+ }
+ function show(message='',isError=false){
+   const storageLine='สถานะข้อมูลในเครื่อง: '+dbCounts();
+   const backupLine=lastManualBackup?'\nดาวน์โหลดไฟล์สำรองในรอบนี้: '+lastManualBackup:'\nยังไม่ได้ดาวน์โหลดไฟล์สำรองในรอบนี้';
+   const fileLine=linkedFile?'\nเชื่อมแฟ้มข้อมูล: '+linkedFilename+(writing||changeNumber>writtenNumber?' (กำลังบันทึก...)':' (บันทึกแล้ว)'):'\nยังไม่เชื่อมแฟ้มข้อมูลถาวร';
+   status.textContent=storageLine+backupLine+fileLine+(message?'\n'+message:'');
+   status.classList.toggle('alert',!!isError);
+ }
+ function valid(d){return d && ['teachers','classes','subjects','assignments','slots'].every(k=>Array.isArray(d[k]));}
+ function filenameStamp(){
+   const now=new Date(); const pad=n=>String(n).padStart(2,'0');
+   return now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
+ }
+ function manualBackup(){
+   try{
+     if(!valid(db))throw Error('ข้อมูลในโปรแกรมไม่สมบูรณ์');
+     const name='สำรองตารางสอน_'+filenameStamp()+'.json';
+     download(name,JSON.stringify(db,null,2),'application/json;charset=utf-8');
+     lastManualBackup=new Date().toLocaleString('th-TH');
+     show('เริ่มดาวน์โหลด '+name+' แล้ว โปรดตรวจสอบไฟล์ใน Downloads ก่อนปิดโปรแกรม');
+   }catch(err){show('ดาวน์โหลดไฟล์สำรองไม่สำเร็จ: '+err.message,true);}
+ }
+ async function fileWrite(){
+   if(!linkedFile||writing||changeNumber===writtenNumber)return;
+   writing=true; show();
+   try{
+     while(linkedFile&&writtenNumber<changeNumber){
+       const revision=changeNumber;
+       const payload=JSON.stringify(db,null,2);
+       const writable=await linkedFile.createWritable();
+       try{await writable.write(payload);await writable.close();}
+       catch(err){try{await writable.abort();}catch(_){}throw err;}
+       writtenNumber=revision;
+     }
+     show('ข้อมูลล่าสุดบันทึกลงแฟ้ม JSON ที่เชื่อมไว้แล้ว');
+   }catch(err){
+     warning=err.message;
+     show('บันทึกแฟ้มอัตโนมัติไม่สำเร็จ: '+warning+' • โปรดกดบันทึกข้อมูลถาวร (.json) เพื่อสำรองด้วยตนเอง',true);
+   }finally{writing=false;}
+ }
+ function queueWrite(){
+   if(!linkedFile)return;
+   clearTimeout(pendingTimer);
+   pendingTimer=setTimeout(fileWrite,300);
+ }
+ const originalSave=save;
+ save=function(){
+   try{originalSave();}
+   catch(err){
+     show('ไม่สามารถบันทึกข้อมูลในเบราว์เซอร์: '+err.message+' กรุณาดาวน์โหลด JSON ทันที',true);
+     window.alert('การบันทึกข้อมูลในเครื่องล้มเหลว กรุณาใช้ปุ่ม "บันทึกข้อมูลถาวร (.json)" ก่อนปิดโปรแกรม: '+err.message);
+   }
+   changeNumber++;
+   queueWrite();
+   show(linkedFile?'ข้อมูลในเครื่องมีการเปลี่ยนแปลง กำลังบันทึกลงแฟ้ม...':'ข้อมูลเปลี่ยนแปลงแล้ว — กรุณาดาวน์โหลด JSON เพื่อเก็บไว้นอกเบราว์เซอร์');
+ };
+ async function startNewFile(){
+   if(!fileAPI)return;
+   if(writing){show('กำลังบันทึกแฟ้มเดิม กรุณารอสักครู่ก่อนเปลี่ยนแฟ้ม',true);return;}
+   try{
+     const handle=await window.showSaveFilePicker({suggestedName:'ข้อมูลตารางสอนโรงเรียนบ้านตลิ่งชัน.json',types:[{description:'ไฟล์ข้อมูลโปรแกรม (JSON)',accept:{'application/json':['.json']}}]});
+     if(!handle)return;
+     clearTimeout(pendingTimer);
+     linkedFile=handle; linkedFilename=handle.name;
+     changeNumber++;writtenNumber=0;
+     await fileWrite();
+   }catch(err){
+     if(err.name==='AbortError')return;
+     linkedFile=null;
+     show('เชื่อมแฟ้มอัตโนมัติไม่ได้: '+err.message+' กรุณาสำรอง JSON ด้วยปุ่มสีเขียว',true);
+   }
+ }
+ async function openExistingFile(){
+   if(!fileAPI)return;
+   if(writing){show('กำลังบันทึกแฟ้มเดิม กรุณารอสักครู่ก่อนเปิดแฟ้มอื่น',true);return;}
+   try{
+     const [handle]=await window.showOpenFilePicker({multiple:false,types:[{description:'ไฟล์ข้อมูลโปรแกรม (JSON)',accept:{'application/json':['.json']}}]});
+     if(!handle)return;
+     const f=await handle.getFile();
+     const incoming=JSON.parse(await f.text());
+     if(!valid(incoming))throw Error('ไม่ใช่ไฟล์ JSON ที่สำรองจากโปรแกรมนี้');
+     const count=(incoming.slots||[]).length;
+     const message='ต้องการเปิดข้อมูลจากแฟ้ม '+handle.name+' ใช่หรือไม่?\n'+
+       'มีตารางที่จัดแล้ว '+count+' คาบ\n\n'+
+       'ข้อมูลที่เปิดอยู่ในหน้านี้จะถูกแทนที่ หากมีข้อมูลใหม่ที่ยังไม่ได้สำรอง โปรดกดยกเลิกก่อน';
+     if(!window.confirm(message))return;
+     clearTimeout(pendingTimer);linkedFile=null;
+     db={...initial(),...incoming};
+     cleanup();
+     save(); render();
+     linkedFile=handle;linkedFilename=handle.name;
+     changeNumber=0;writtenNumber=0;
+     // Mark current file contents as already saved. Future edits will write to it.
+     show('เปิดข้อมูลจากแฟ้มเดิมสำเร็จ • เมื่อแก้ไขข้อมูลจะบันทึกกลับไปที่แฟ้มนี้');
+   }catch(err){
+     if(err.name==='AbortError')return;
+     show('เปิดแฟ้มข้อมูลไม่ได้: '+err.message,true);
+   }
+ }
+ q('safetyBackup').addEventListener('click',manualBackup);
+ q('safetyRestore').addEventListener('click',()=>q('restoreFile').click());
+ q('safetyAttachNew').addEventListener('click',startNewFile);
+ q('safetyAttachExisting').addEventListener('click',openExistingFile);
+ ['backup','backup2'].forEach(id=>{const b=q(id);if(b)b.addEventListener('click',()=>{
+   lastManualBackup=new Date().toLocaleString('th-TH');show('โปรดตรวจสอบไฟล์สำรองใน Downloads');
+ });});
+ q('restoreFile').addEventListener('change',()=>{setTimeout(()=>{
+   // Existing importer is the single authoritative JSON validation/restore path.
+   if(linkedFile){linkedFile=null;linkedFilename='';}
+   show('หลังนำเข้าข้อมูล JSON สำเร็จ โปรดดาวน์โหลดไฟล์สำรองใหม่หรือเชื่อมแฟ้มข้อมูลอีกครั้ง');
+ },650);});
+ window.addEventListener('beforeunload',e=>{
+   if(linkedFile&&changeNumber>writtenNumber){e.preventDefault();e.returnValue='';}
+ });
+ // The program is still local-first: moving/renaming HTML can produce a different storage origin.
+ show('หากเปลี่ยนไฟล์ HTML/เปลี่ยนเครื่องแล้วข้อมูลไม่ปรากฏ ให้เปิดไฟล์ JSON ที่เคยสำรอง');
+})();
+</script>
+</body></html>
